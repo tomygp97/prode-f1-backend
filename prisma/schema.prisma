@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  leaguesOwned   League[]       @relation("LeagueOwner")
+  leagueMembers  LeagueMember[]
+  predictions    Prediction[]
+  leagueRankings LeagueRanking[]
+
+  @@map("users")
+}
+
+model Season {
+  id    String @id @default(uuid())
+  year  Int    @unique
+
+  teams   Team[]
+  drivers Driver[]
+  races   Race[]
+  leagues League[]
+
+  @@map("seasons")
+}
+
+model Team {
+  id       String @id @default(uuid())
+  name     String
+  seasonId String @map("season_id")
+
+  season  Season   @relation(fields: [seasonId], references: [id])
+  drivers Driver[]
+
+  @@map("teams")
+}
+
+model Driver {
+  id       String @id @default(uuid())
+  name     String
+  seasonId String @map("season_id")
+  teamId   String @map("team_id")
+
+  season Season @relation(fields: [seasonId], references: [id])
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  leaguesTracking League[] @relation("TrackedDriver")
+
+  @@map("drivers")
+}
+
+model League {
+  id              String    @id @default(uuid())
+  name            String
+  ownerId         String    @map("owner_id")
+  inviteCode      String    @unique @map("invite_code")
+  seasonId        String    @map("season_id")
+  trackedDriverId String?   @map("tracked_driver_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  owner         User           @relation("LeagueOwner", fields: [ownerId], references: [id])
+  season        Season         @relation(fields: [seasonId], references: [id])
+  trackedDriver Driver?        @relation("TrackedDriver", fields: [trackedDriverId], references: [id])
+  members       LeagueMember[]
+  rankings      LeagueRanking[]
+
+  @@map("leagues")
+}
+
+model LeagueMember {
+  id       String    @id @default(uuid())
+  leagueId String    @map("league_id")
+  userId   String    @map("user_id")
+  role     String    @default("member")
+  joinedAt DateTime  @default(now()) @map("joined_at")
+  leftAt   DateTime? @map("left_at")
+
+  league League @relation(fields: [leagueId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("league_members")
+}
+
+model Race {
+  id                 String   @id @default(uuid())
+  seasonId           String   @map("season_id")
+  name               String
+  circuit            String
+  round              Int
+  qualifyingStartAt  DateTime @map("qualifying_start_at")
+  raceStartAt        DateTime @map("race_start_at")
+  status             String   @default("scheduled")
+  externalId         String?  @map("external_id")
+
+  season       Season        @relation(fields: [seasonId], references: [id])
+  predictions  Prediction[]
+  raceResult   RaceResult?
+  driverResults RaceDriverResult[]
+
+  @@map("races")
+}
+
+model Prediction {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  raceId         String    @map("race_id")
+
+  poleDriverId   String    @map("pole_driver_id")
+  top1DriverId   String    @map("top1_driver_id")
+  top2DriverId   String    @map("top2_driver_id")
+  top3DriverId   String    @map("top3_driver_id")
+  top4DriverId   String    @map("top4_driver_id")
+  top5DriverId   String    @map("top5_driver_id")
+
+  safetyCar      Boolean   @map("safety_car")
+  dnfCount       Int       @map("dnf_count")
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  user  User  @relation(fields: [userId], references: [id])
+  race  Race  @relation(fields: [raceId], references: [id])
+  score PredictionScore?
+
+  @@unique([raceId, userId])
+  @@map("predictions")
+}
+
+model RaceResult {
+  id                     String   @id @default(uuid())
+  raceId                 String   @unique @map("race_id")
+
+  poleDriverId           String   @map("pole_driver_id")
+  raceWinnerDriverId     String   @map("race_winner_driver_id")
+  raceWinnerTeamId       String   @map("race_winner_team_id")
+
+  safetyCar              Boolean  @map("safety_car")
+  dnfCount               Int      @map("dnf_count")
+
+  syncedAt               DateTime @map("synced_at")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  race Race @relation(fields: [raceId], references: [id])
+
+  @@map("race_results")
+}
+
+model RaceDriverResult {
+  id       String   @id @default(uuid())
+  raceId   String   @map("race_id")
+  driverId String   @map("driver_id")
+  position Int?
+  dnf      Boolean  @default(false)
+
+  race Race @relation(fields: [raceId], references: [id])
+
+  @@unique([raceId, driverId])
+  @@map("race_driver_results")
+}
+
+model ScoringRule {
+  id       String @id @default(uuid())
+  category String @unique
+  points   Int
+
+  @@map("scoring_rules")
+}
+
+model PredictionScore {
+  id               String   @id @default(uuid())
+  predictionId     String   @unique @map("prediction_id")
+  pointsBreakdown  Json     @map("points_breakdown")
+  totalPoints      Int      @map("total_points")
+  calculatedAt     DateTime @default(now()) @map("calculated_at")
+
+  prediction Prediction @relation(fields: [predictionId], references: [id])
+
+  @@map("prediction_scores")
+}
+
+model LeagueRanking {
+  id           String   @id @default(uuid())
+  leagueId     String   @map("league_id")
+  userId       String   @map("user_id")
+  totalPoints  Int      @default(0) @map("total_points")
+  racesCounted Int      @default(0) @map("races_counted")
+  lastUpdated  DateTime @updatedAt @map("last_updated")
+
+  league League @relation(fields: [leagueId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([leagueId, userId])
+  @@map("league_rankings")
+}
