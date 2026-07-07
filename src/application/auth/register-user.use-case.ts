@@ -1,8 +1,8 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import * as bcrypt from 'bcrypt';
-import { UserRepository } from 'src/domain/ports/user.repository';
-import { User } from 'src/domain/entities/user.entity';
+import { UserRepository } from "../../domain/ports/user.repository";
+import { User } from "../../domain/entities/user.entity"
 
 
 export interface RegisterUserInput {
