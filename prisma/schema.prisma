@@ -99,10 +99,10 @@ model Race {
   name               String
   circuit            String
   round              Int
-  qualifyingStartAt  DateTime @map("qualifying_start_at")
-  raceStartAt        DateTime @map("race_start_at")
+  qualifyingStartAt  DateTime? @map("qualifying_start_at")
+  raceStartAt        DateTime? @map("race_start_at")
   status             String   @default("scheduled")
-  externalId         String?  @map("external_id")
+  externalId         String?  @unique @map("external_id")
 
   season       Season        @relation(fields: [seasonId], references: [id])
   predictions  Prediction[]
