@@ -1,8 +1,8 @@
-import { Injectable, Inject } from "@nestjs/common";
-import { User } from '../../../domain/entities/user.entity';
-import type { UserRepository } from '../../../domain/ports/user.repository';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import * as bcrypt from 'bcrypt';
+import { UserRepository } from "../../domain/ports/user.repository";
+import { User } from "../../domain/entities/user.entity"
 
 
 export interface RegisterUserInput {
@@ -19,15 +19,12 @@ export interface RegisterUserOutput {
 
 @Injectable()
 export class RegisterUserUseCase {
-    constructor(
-        @Inject('UserRepository')
-        private readonly userRepository: UserRepository,
-    ){}
+    constructor(private readonly userRepository: UserRepository) {}
 
     async execute(input: RegisterUserInput): Promise<RegisterUserOutput> {
         const existing = await this.userRepository.findByEmail(input.email);
         if (existing) {
-            throw new Error('Email already registered');
+            throw new ConflictException('Email already registered');
         }
 
         const hashedPassword = await bcrypt.hash(input.password, 10);
