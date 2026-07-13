@@ -5,71 +5,87 @@ import { SyncCalendarUseCase } from './sync-calendar.use-case'
 const mockOfficialResultsProvider: jest.Mocked<OfficialResultsProvider> = {
     getMeetings: jest.fn(),
     getDriverPositions: jest.fn(),
+    hasRaceResults: jest.fn(),
 }
 
 const mockRaceRepository: jest.Mocked<RaceRepository> = {
     upsertFromMeeting: jest.fn(),
     findAll: jest.fn(),
-    findNext: jest.fn()
+    findNext: jest.fn(),
+    findScheduledBeforeDate: jest.fn(),
+    findLockedBeforeDate: jest.fn(),
+    updateStatus: jest.fn(),
 }
 
 const fakeMeetings: RaceMeetingData[] = [
     {
-      externalMeetingKey: 1,
+      meetingKey: 1,
       name: 'Australian Grand Prix',
       circuit: 'Melbourne',
       country: 'Australia',
       qualifyingStartAt: new Date('2026-03-07'),
       raceStartAt: new Date('2026-03-08'),
       isCancelled: false,
+      raceSessionKey: 111,
+      qualifyingSessionKey: 222
     },
     {
-      externalMeetingKey: 2,
+      meetingKey: 2,
       name: 'Chinese Grand Prix',
       circuit: 'Shanghai',
       country: 'China',
       qualifyingStartAt: new Date('2026-03-14'),
       raceStartAt: new Date('2026-03-15'),
       isCancelled: false,
+      raceSessionKey: 333,
+      qualifyingSessionKey: 444,
     },
     {
-      externalMeetingKey: 3,
+      meetingKey: 3,
       name: 'test Grand Prix',
       circuit: 'test',
       country: 'test',
       qualifyingStartAt: new Date('2026-03-15'),
       raceStartAt: null,
       isCancelled: true,
+      raceSessionKey: 555,
+      qualifyingSessionKey: 666,
     },
   ];
 
   const disorderedMeetings: RaceMeetingData[] = [
     {
-      externalMeetingKey: 1,
+      meetingKey: 1,
       name: 'Australian Grand Prix',
       circuit: 'Melbourne',
       country: 'Australia',
       qualifyingStartAt: new Date('2026-03-08'),
       raceStartAt: new Date('2026-03-09'),
       isCancelled: false,
+      raceSessionKey: 555,
+      qualifyingSessionKey: 666,
     },
     {
-      externalMeetingKey: 2,
+      meetingKey: 2,
       name: 'Chinese Grand Prix',
       circuit: 'Shanghai',
       country: 'China',
       qualifyingStartAt: new Date('2026-03-03'),
       raceStartAt: new Date('2026-03-04'),
       isCancelled: false,
+      raceSessionKey: 555,
+      qualifyingSessionKey: 666,
     },
     {
-      externalMeetingKey: 3,
+      meetingKey: 3,
       name: 'test Grand Prix',
       circuit: 'test',
       country: 'test',
       qualifyingStartAt: new Date('2026-03-16'),
       raceStartAt: null,
       isCancelled: true,
+      raceSessionKey: 555,
+      qualifyingSessionKey: 666,
     },
   ];
 

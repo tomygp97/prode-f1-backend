@@ -1,5 +1,7 @@
 export interface RaceMeetingData {
-    externalMeetingKey: number;
+    meetingKey: number;
+    raceSessionKey: number | null;
+    qualifyingSessionKey: number | null;
     name: string;
     circuit: string;
     country: string;
@@ -17,4 +19,5 @@ export interface DriverPositionData {
 export interface OfficialResultsProvider {
     getMeetings(year: number): Promise<RaceMeetingData[]>;
     getDriverPositions(sessionKey: number): Promise<DriverPositionData[]>;
+    hasRaceResults(sessionKey: number): Promise<boolean>;
 }

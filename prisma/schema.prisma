@@ -93,20 +93,32 @@ model LeagueMember {
   @@map("league_members")
 }
 
-model Race {
-  id                 String   @id @default(uuid())
-  seasonId           String   @map("season_id")
-  name               String
-  circuit            String
-  round              Int
-  qualifyingStartAt  DateTime? @map("qualifying_start_at")
-  raceStartAt        DateTime? @map("race_start_at")
-  status             String   @default("scheduled")
-  externalId         String?  @unique @map("external_id")
+enum RaceStatus {
+  SCHEDULED
+  LOCKED
+  FINISHED
+  CANCELLED
+  RESULTS_SYNCED
+}
 
-  season       Season        @relation(fields: [seasonId], references: [id])
-  predictions  Prediction[]
-  raceResult   RaceResult?
+model Race {
+  id                    String      @id @default(uuid())
+  seasonId              String      @map("season_id")
+  name                  String
+  circuit               String
+  round                 Int
+  qualifyingStartAt     DateTime?   @map("qualifying_start_at")
+  raceStartAt           DateTime?   @map("race_start_at")
+  status                RaceStatus  @default(SCHEDULED)
+
+  // OpenF1 identifiers
+  meetingKey            Int         @unique @map("meeting_key")
+  raceSessionKey        Int?        @unique @map("race_session_key")
+  qualifyingSessionKey  Int?        @unique @map("qualifying_session_key")
+
+  season        Season             @relation(fields: [seasonId], references: [id])
+  predictions   Prediction[]
+  raceResult    RaceResult?
   driverResults RaceDriverResult[]
 
   @@map("races")

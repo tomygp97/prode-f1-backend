@@ -1,3 +1,5 @@
+import { RaceStatus } from "../enums/race-status.enum";
+
 export class Race {
     private constructor(
         public readonly id: string,
@@ -6,10 +8,10 @@ export class Race {
         public readonly circuit: string,
         public readonly country: string,
         public readonly round: number,
-        public readonly qualifyingSartAt: Date | null,
+        public readonly qualifyingStartAt: Date | null,
         public readonly raceStartAt: Date | null,
-        public readonly status: string,
-        public readonly externalId: string,
+        public readonly status: RaceStatus,
+        public readonly meetingKey: number,
     ) {}
 
     static create(props: {
@@ -19,10 +21,10 @@ export class Race {
         circuit: string,
         country: string,
         round: number,
-        qualifyingSartAt: Date | null,
+        qualifyingStartAt: Date | null,
         raceStartAt: Date | null,
-        status: string,
-        externalId: string,
+        status: RaceStatus,
+        meetingKey: number,
     }): Race {
         return new Race(
             props.id,
@@ -31,18 +33,18 @@ export class Race {
             props.circuit,
             props.country,
             props.round,
-            props.qualifyingSartAt,
+            props.qualifyingStartAt,
             props.raceStartAt,
             props.status,
-            props.externalId,
+            props.meetingKey,
         );
     }
 
     isLocked(): boolean {
-        return this.status === 'locked';
+        return this.status === RaceStatus.LOCKED;
     }
 
     isFinished(): boolean {
-        return this.status === 'finished';
+        return this.status === RaceStatus.FINISHED;
     }
 }

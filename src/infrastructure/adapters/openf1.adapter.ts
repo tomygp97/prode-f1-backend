@@ -45,7 +45,9 @@ export class OpenF1Adapter implements OfficialResultsProvider {
             );
 
             return {
-                externalMeetingKey: meeting.meeting_key,
+                meetingKey: meeting.meeting_key,
+                raceSessionKey: race ? race.session_key : null,
+                qualifyingSessionKey: qualifying ? qualifying.session_key : null,
                 name: meeting.meeting_name,
                 circuit: meeting.circuit_short_name,
                 country: meeting.country_name,
@@ -72,5 +74,16 @@ export class OpenF1Adapter implements OfficialResultsProvider {
             position: entry.position,
             dnf: false, //TODO: Lo refinamos cuando tengamos race_control
         }))
+    }
+
+    async hasRaceResults(sessionKey: number): Promise<boolean> {
+        const res = await axios.get<OpenF1Position[]>(
+            `${OPENF1_BASE_URL}/position?session_key=${sessionKey}`
+        );
+
+        if (res.data.length === 0) return false;
+
+        const uniqueDrivers = new Set(res.data.map(p => p.driver_number));
+        return uniqueDrivers.size >= 18;
     }
 }
