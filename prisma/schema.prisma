@@ -64,6 +64,7 @@ model League {
   name            String
   ownerId         String    @map("owner_id")
   inviteCode      String    @unique @map("invite_code")
+  isPublic        Boolean   @default(false) @map("is_public")
   seasonId        String    @map("season_id")
   trackedDriverId String?   @map("tracked_driver_id")
   createdAt       DateTime  @default(now()) @map("created_at")
@@ -75,8 +76,23 @@ model League {
   trackedDriver Driver?        @relation("TrackedDriver", fields: [trackedDriverId], references: [id])
   members       LeagueMember[]
   rankings      LeagueRanking[]
+  prizes        LeaguePrize[]
 
   @@map("leagues")
+}
+
+model LeaguePrize {
+  id          String   @id @default(uuid())
+  leagueId    String   @map("league_id")
+  position    Int      // 1, 2, 3, 4, 5...
+  description String   // texto libre: "$5000" o "Remera de la escudería"
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  league League @relation(fields: [leagueId], references: [id])
+
+  @@unique([leagueId, position])
+  @@map("league_prizes")
 }
 
 model LeagueMember {
