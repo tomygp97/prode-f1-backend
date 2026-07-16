@@ -1,7 +1,7 @@
 import { LeagueMember } from '../entities/league-member.entity';
 
-export interface LeagueMemberRepository {
-  save(member: LeagueMember): Promise<void>;
-  findByLeagueAndUser(leagueId: string, userId: string): Promise<LeagueMember | null>;
-  findActiveMembersByLeague(leagueId: string): Promise<LeagueMember[]>;
+export abstract class LeagueMemberRepository {
+  abstract save(member: LeagueMember): Promise<void>;
+  abstract findByLeagueAndUser(leagueId: string, userId: string): Promise<LeagueMember | null>;
+  abstract findActiveMembersByLeague(leagueId: string): Promise<LeagueMember[]>;
 }

@@ -12,7 +12,13 @@ import { ListPublicLeaguesUseCase } from '../../application/leagues/list-public-
 import { ListLeagueMembersUseCase } from '../../application/leagues/list-league-members/list-league-members.use-case';
 import { SetLeaguePrizesUseCase } from '../../application/leagues/set-league-prizes/set-league-prizes.use-case';
 import { GetLeaguePrizesUseCase } from '../../application/leagues/get-league-prizes/get-league-prizes.use-case';
-import { TransferLeagueOwnershipUseCase } from '../../application/leagues/transfer-league-ownership/transfer-league-ownership.use-case'; // 👈 nuevo
+import { TransferLeagueOwnershipUseCase } from '../../application/leagues/transfer-league-ownership/transfer-league-ownership.use-case';
+
+// Puertos (ahora clases abstractas, necesitamos importarlas como valores reales)
+import { LeagueRepository } from '../../domain/ports/league.repository';
+import { LeagueMemberRepository } from '../../domain/ports/league-member.repository';
+import { LeaguePrizeRepository } from '../../domain/ports/league-prize.repository';
+import { InviteCodeGenerator } from '../../domain/ports/invite-code-generator';
 
 // Repositorios Prisma (implementaciones)
 import { LeaguePrismaRepository } from '../database/repositories/league.prisma.repository';
@@ -34,13 +40,13 @@ import { NanoIdInviteCodeGenerator } from '../services/invite-code.generator';
     ListLeagueMembersUseCase,
     SetLeaguePrizesUseCase,
     GetLeaguePrizesUseCase,
-    TransferLeagueOwnershipUseCase, // 👈 nuevo
+    TransferLeagueOwnershipUseCase,
 
-    // Puerto ↔ implementación
-    { provide: 'LeagueRepository', useClass: LeaguePrismaRepository },
-    { provide: 'LeagueMemberRepository', useClass: LeagueMemberPrismaRepository },
-    { provide: 'LeaguePrizeRepository', useClass: LeaguePrizePrismaRepository },
-    { provide: 'InviteCodeGenerator', useClass: NanoIdInviteCodeGenerator },
+    // Puerto ↔ implementación (ahora sin comillas, la clase directo)
+    { provide: LeagueRepository, useClass: LeaguePrismaRepository },
+    { provide: LeagueMemberRepository, useClass: LeagueMemberPrismaRepository },
+    { provide: LeaguePrizeRepository, useClass: LeaguePrizePrismaRepository },
+    { provide: InviteCodeGenerator, useClass: NanoIdInviteCodeGenerator },
   ],
 })
 export class LeaguesModule {}

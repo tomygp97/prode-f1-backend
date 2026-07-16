@@ -1,6 +1,6 @@
 import { LeaguePrize } from '../entities/league-prize.entity';
 
-export interface LeaguePrizeRepository {
-  replaceAll(leagueId: string, prizes: LeaguePrize[]): Promise<void>;
-  findByLeagueId(leagueId: string): Promise<LeaguePrize[]>;
+export abstract class LeaguePrizeRepository {
+  abstract replaceAll(leagueId: string, prizes: LeaguePrize[]): Promise<void>;
+  abstract findByLeagueId(leagueId: string): Promise<LeaguePrize[]>;
 }

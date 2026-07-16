@@ -1,3 +1,3 @@
-export interface InviteCodeGenerator {
-  generate(): string;
+export abstract class InviteCodeGenerator {
+  abstract generate(): string;
 }
