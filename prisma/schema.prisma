@@ -106,6 +106,7 @@ model Race {
   seasonId              String      @map("season_id")
   name                  String
   circuit               String
+  country               String
   round                 Int
   qualifyingStartAt     DateTime?   @map("qualifying_start_at")
   raceStartAt           DateTime?   @map("race_start_at")

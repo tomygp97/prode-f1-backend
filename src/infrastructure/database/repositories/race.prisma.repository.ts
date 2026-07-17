@@ -2,8 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RaceRepository } from '../../../domain/ports/race.repository';
 import { RaceMeetingData } from '../../../domain/ports/official-results.provider';
-import { RaceStatus as PrismaRaceStatus } from '@prisma/client';
 import { RaceStatus as DomainRaceStatus } from '../../../domain/enums/race-status.enum';
+import { RaceStatus as PrismaRaceStatus } from '@prisma/client';
+import { RaceMapper } from '../mappers/race.mapper';
 
 @Injectable()
 export class RacePrismaRepository implements RaceRepository {
@@ -16,6 +17,7 @@ export class RacePrismaRepository implements RaceRepository {
                 seasonId: seasonId,
                 name: meeting.name,
                 circuit: meeting.circuit,
+                country: meeting.country,
                 round,
                 qualifyingStartAt: meeting.qualifyingStartAt,
                 raceStartAt: meeting.raceStartAt,
@@ -27,6 +29,7 @@ export class RacePrismaRepository implements RaceRepository {
               update: {
                 name: meeting.name,
                 circuit: meeting.circuit,
+                country: meeting.country,
                 qualifyingStartAt: meeting.qualifyingStartAt,
                 raceStartAt: meeting.raceStartAt,
                 raceSessionKey: meeting.raceSessionKey,
@@ -36,32 +39,45 @@ export class RacePrismaRepository implements RaceRepository {
     };
 
     async findAll() {
-        return this.prisma.race.findMany({ orderBy: {round: 'asc'} });
+        const races = await this.prisma.race.findMany({
+            orderBy: { round: 'asc' }
+        });
+    
+        return races.map(RaceMapper.toDomain);
     };
 
     async findNext() {
-        return this.prisma.race.findFirst({
-            where: { status: PrismaRaceStatus.SCHEDULED, raceStartAt: { gte: new Date() } },
+        const race = await this.prisma.race.findFirst({
+            where: {
+                status: PrismaRaceStatus.SCHEDULED,
+                raceStartAt: { gte: new Date() }
+            },
             orderBy: { raceStartAt: 'asc' },
         });
+        
+        return race ? RaceMapper.toDomain(race) : null;
     };
 
-    async findScheduledBeforeDate(date: Date): Promise<any[]> {
-      return this.prisma.race.findMany({
-        where: {
-            qualifyingStartAt: { lte: date },
-            status: PrismaRaceStatus.SCHEDULED,
-        },
-      });
+    async findScheduledBeforeDate(date: Date) {
+        const races = await this.prisma.race.findMany({
+            where: {
+                qualifyingStartAt: { lte: date },
+                status: PrismaRaceStatus.SCHEDULED,
+            },
+        });
+    
+        return races.map(RaceMapper.toDomain);
     };
 
-    async findLockedRacesWithPastStartTime(date: Date): Promise<any[]> {
-        return this.prisma.race.findMany({
+    async findLockedRacesWithPastStartTime(date: Date) {
+        const races = await this.prisma.race.findMany({
             where: {
                 raceStartAt: { lte: date },
                 status: PrismaRaceStatus.LOCKED
             }
-        })
+        });
+    
+        return races.map(RaceMapper.toDomain);
     }
 
     async updateStatus(
@@ -71,28 +87,8 @@ export class RacePrismaRepository implements RaceRepository {
         await this.prisma.race.update({
             where: { id: raceId },
             data: {
-                status: this.mapStatus(status),
+                status: RaceMapper.toPrismaStatus(status),
             },
         });
     }
-
-    private mapStatus(status: DomainRaceStatus): PrismaRaceStatus {
-        switch(status) {
-            case DomainRaceStatus.SCHEDULED:
-                return PrismaRaceStatus.SCHEDULED;
-    
-            case DomainRaceStatus.LOCKED:
-                return PrismaRaceStatus.LOCKED;
-    
-            case DomainRaceStatus.FINISHED:
-                return PrismaRaceStatus.FINISHED;
-    
-            case DomainRaceStatus.CANCELLED:
-                return PrismaRaceStatus.CANCELLED;
-    
-            case DomainRaceStatus.RESULTS_SYNCED:
-                return PrismaRaceStatus.RESULTS_SYNCED;
-        }
-    }
-
 }
