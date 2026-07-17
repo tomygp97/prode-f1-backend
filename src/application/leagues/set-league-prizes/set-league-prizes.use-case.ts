@@ -1,14 +1,14 @@
 import { Injectable, Inject, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { LeaguePrize } from '../../../domain/entities/league-prize.entity';
-import type { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
-import type { LeaguePrizeRepository } from '../../../domain/ports/league-prize.repository';
+import { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
+import { LeaguePrizeRepository } from '../../../domain/ports/league-prize.repository';
 
 @Injectable()
 export class SetLeaguePrizesUseCase {
   constructor(
-    @Inject('LeagueMemberRepository') private readonly memberRepo: LeagueMemberRepository,
-    @Inject('LeaguePrizeRepository') private readonly prizeRepo: LeaguePrizeRepository,
+    private readonly memberRepo: LeagueMemberRepository,
+    private readonly prizeRepo: LeaguePrizeRepository,
   ) {}
 
   async execute(input: {

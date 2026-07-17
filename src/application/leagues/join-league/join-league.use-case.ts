@@ -1,17 +1,16 @@
 import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { LeagueMember } from '../../../domain/entities/league-member.entity';
-import type { LeagueRepository } from '../../../domain/ports/league.repository';
-import type { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
+import { LeagueRepository } from '../../../domain/ports/league.repository';
+import { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
 import { InviteCodeGenerator } from '../../../domain/ports/invite-code-generator';
 
 @Injectable()
-export class JoinLeagueUseCase{
-    constructor(
-        @Inject('LeagueRepository') private readonly leagueRepo: LeagueRepository,
-        @Inject('LeagueMemberRepository') private readonly memberRepo: LeagueMemberRepository,
-    ) {}
-
+export class JoinLeagueUseCase {
+  constructor(
+    private readonly leagueRepo: LeagueRepository,
+    private readonly memberRepo: LeagueMemberRepository,
+  ) {}
     async execute(input: { inviteCode: string; userId: string }): Promise<LeagueMember> {
     const league = await this.leagueRepo.findByInviteCode(input.inviteCode);
     if (!league) {

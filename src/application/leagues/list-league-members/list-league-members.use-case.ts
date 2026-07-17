@@ -1,11 +1,11 @@
 import { Injectable, Inject, ForbiddenException } from '@nestjs/common';
 import { LeagueMember } from '../../../domain/entities/league-member.entity';
-import type { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
+import { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
 
 @Injectable()
 export class ListLeagueMembersUseCase {
   constructor(
-    @Inject('LeagueMemberRepository') private readonly memberRepo: LeagueMemberRepository,
+    private readonly memberRepo: LeagueMemberRepository,
   ) {}
 
   async execute(input: { leagueId: string; requesterId: string }): Promise<LeagueMember[]> {

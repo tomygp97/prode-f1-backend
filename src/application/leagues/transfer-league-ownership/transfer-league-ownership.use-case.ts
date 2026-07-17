@@ -1,14 +1,14 @@
 import { Injectable, Inject, ForbiddenException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { League } from '../../../domain/entities/league.entity';
 import { LeagueMember } from '../../../domain/entities/league-member.entity';
-import type { LeagueRepository } from '../../../domain/ports/league.repository';
-import type { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
+import { LeagueRepository } from '../../../domain/ports/league.repository';
+import { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
 
 @Injectable()
 export class TransferLeagueOwnershipUseCase {
   constructor(
-    @Inject('LeagueRepository') private readonly leagueRepo: LeagueRepository,
-    @Inject('LeagueMemberRepository') private readonly memberRepo: LeagueMemberRepository,
+    private readonly leagueRepo: LeagueRepository,
+    private readonly memberRepo: LeagueMemberRepository,
   ) {}
 
   async execute(input: {

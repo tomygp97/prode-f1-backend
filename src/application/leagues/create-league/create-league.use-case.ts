@@ -2,18 +2,17 @@ import { Injectable, Inject } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { League } from '../../../domain/entities/league.entity';
 import { LeagueMember } from '../../../domain/entities/league-member.entity';
-import type { LeagueRepository } from '../../../domain/ports/league.repository';
-import type { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
-import type { InviteCodeGenerator } from '../../../domain/ports/invite-code-generator';
+import { LeagueRepository } from '../../../domain/ports/league.repository';
+import { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
+import { InviteCodeGenerator } from '../../../domain/ports/invite-code-generator';
 
 @Injectable()
 export class CreateLeagueUseCase {
   constructor(
-    @Inject('LeagueRepository') private readonly leagueRepo: LeagueRepository,
-    @Inject('LeagueMemberRepository') private readonly memberRepo: LeagueMemberRepository,
-    @Inject('InviteCodeGenerator') private readonly codeGen: InviteCodeGenerator,
+    private readonly leagueRepo: LeagueRepository,
+    private readonly memberRepo: LeagueMemberRepository,
+    private readonly codeGen: InviteCodeGenerator,
   ) {}
-
   async execute(input: {
     name: string;
     ownerId: string;
