@@ -12,6 +12,8 @@ export class Race {
         public readonly raceStartAt: Date | null,
         public readonly status: RaceStatus,
         public readonly meetingKey: number,
+        public readonly raceSessionKey: number | null,
+        public readonly qualifyingSessionKey: number | null,
     ) {}
 
     static create(props: {
@@ -25,6 +27,8 @@ export class Race {
         raceStartAt: Date | null,
         status: RaceStatus,
         meetingKey: number,
+        raceSessionKey: number | null,
+        qualifyingSessionKey: number | null,
     }): Race {
         return new Race(
             props.id,
@@ -37,6 +41,8 @@ export class Race {
             props.raceStartAt,
             props.status,
             props.meetingKey,
+            props.raceSessionKey,
+            props.qualifyingSessionKey,
         );
     }
 

@@ -1,11 +1,11 @@
 import { RaceStatus } from '../enums/race-status.enum';
 import type { RaceMeetingData } from './official-results.provider';
 
-export interface RaceRepository {
-  upsertFromMeeting(meeting: RaceMeetingData, season_id: string, round: number): Promise<void>;
-  findAll(): Promise<any[]>;
-  findNext(): Promise<any | null>;
-  findScheduledBeforeDate(date: Date): Promise<any[]>;
-  findLockedBeforeDate(date: Date): Promise<any[]>;
-  updateStatus(raceId: string, status:RaceStatus): Promise<void>;
+export abstract class RaceRepository {
+  abstract upsertFromMeeting(meeting: RaceMeetingData, seasonId: string, round: number): Promise<void>;
+  abstract findAll(): Promise<any[]>;
+  abstract findNext(): Promise<any | null>;
+  abstract findScheduledBeforeDate(date: Date): Promise<any[]>;
+  abstract findLockedRacesWithPastStartTime(date: Date): Promise<any[]>;
+  abstract updateStatus(raceId: string, status: RaceStatus): Promise<void>;
 }

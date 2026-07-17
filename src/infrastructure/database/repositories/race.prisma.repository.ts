@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import type { RaceRepository } from '../../../domain/ports/race.repository';
-import type { RaceMeetingData } from '../../../domain/ports/official-results.provider';
+import { RaceRepository } from '../../../domain/ports/race.repository';
+import { RaceMeetingData } from '../../../domain/ports/official-results.provider';
 import { RaceStatus as PrismaRaceStatus } from '@prisma/client';
 import { RaceStatus as DomainRaceStatus } from '../../../domain/enums/race-status.enum';
 
@@ -55,7 +55,7 @@ export class RacePrismaRepository implements RaceRepository {
       });
     };
 
-    async findLockedBeforeDate(date: Date): Promise<any[]> {
+    async findLockedRacesWithPastStartTime(date: Date): Promise<any[]> {
         return this.prisma.race.findMany({
             where: {
                 raceStartAt: { lte: date },

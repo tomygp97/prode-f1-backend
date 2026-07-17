@@ -1,5 +1,5 @@
-import type { OfficialResultsProvider, RaceMeetingData } from "../../domain/ports/official-results.provider";
-import type { RaceRepository } from "../../domain/ports/race.repository";
+import { OfficialResultsProvider, RaceMeetingData } from "../../domain/ports/official-results.provider";
+import { RaceRepository } from "../../domain/ports/race.repository";
 import { SyncCalendarUseCase } from './sync-calendar.use-case'
 
 const mockOfficialResultsProvider: jest.Mocked<OfficialResultsProvider> = {
@@ -13,7 +13,7 @@ const mockRaceRepository: jest.Mocked<RaceRepository> = {
     findAll: jest.fn(),
     findNext: jest.fn(),
     findScheduledBeforeDate: jest.fn(),
-    findLockedBeforeDate: jest.fn(),
+    findLockedRacesWithPastStartTime: jest.fn(),
     updateStatus: jest.fn(),
 }
 
@@ -93,7 +93,7 @@ describe('SyncCalendarUseCase', () => {
     let useCase: SyncCalendarUseCase;
 
     beforeEach(() => {
-        useCase = new SyncCalendarUseCase(mockOfficialResultsProvider, mockRaceRepository);
+        useCase = new SyncCalendarUseCase(mockRaceRepository, mockOfficialResultsProvider);
         jest.clearAllMocks();
     });
 

@@ -16,8 +16,8 @@ export interface DriverPositionData {
     dnf: boolean;
 }
 
-export interface OfficialResultsProvider {
-    getMeetings(year: number): Promise<RaceMeetingData[]>;
-    getDriverPositions(sessionKey: number): Promise<DriverPositionData[]>;
-    hasRaceResults(sessionKey: number): Promise<boolean>;
+export abstract class OfficialResultsProvider {
+    abstract getMeetings(year: number): Promise<RaceMeetingData[]>;
+    abstract getDriverPositions(sessionKey: number): Promise<DriverPositionData[]>;
+    abstract hasRaceResults(sessionKey: number): Promise<boolean>;
 }

@@ -1,6 +1,6 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
-import type { OfficialResultsProvider } from "../../domain/ports/official-results.provider";
-import type { RaceRepository } from "../../domain/ports/race.repository";
+import { Injectable, Logger } from "@nestjs/common";
+import { OfficialResultsProvider } from "../../domain/ports/official-results.provider";
+import { RaceRepository } from "../../domain/ports/race.repository";
 
 
 @Injectable()
@@ -8,10 +8,8 @@ export class SyncCalendarUseCase {
     private readonly logger = new Logger(SyncCalendarUseCase.name);
 
     constructor(
-        @Inject('OfficialResultsProvider')
-        private readonly officialResultsProvider: OfficialResultsProvider,
-        @Inject('RaceRepository')
         private readonly raceRepository: RaceRepository,
+        private readonly officialResultsProvider: OfficialResultsProvider,
     ) {}
 
     async execute(year: number, seasonId: string): Promise<void> {
