@@ -37,25 +37,30 @@ model Season {
 model Team {
   id       String @id @default(uuid())
   name     String
+  colour   String
   seasonId String @map("season_id")
 
   season  Season   @relation(fields: [seasonId], references: [id])
   drivers Driver[]
 
+  @@unique([name, seasonId])
   @@map("teams")
 }
 
 model Driver {
-  id       String @id @default(uuid())
-  name     String
-  seasonId String @map("season_id")
-  teamId   String @map("team_id")
+  id           String @id @default(uuid())
+  name         String
+  acronym      String @map("acronym")
+  driverNumber Int    @map("driver_number")
+  seasonId     String @map("season_id")
+  teamId       String @map("team_id")
 
   season Season @relation(fields: [seasonId], references: [id])
   team   Team   @relation(fields: [teamId], references: [id])
 
   leaguesTracking League[] @relation("TrackedDriver")
 
+  @@unique([driverNumber, seasonId])
   @@map("drivers")
 }
 

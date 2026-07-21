@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
-import type { OfficialResultsProvider, RaceMeetingData, DriverPositionData } from '../../domain/ports/official-results.provider';
+import type { OfficialResultsProvider, RaceMeetingData, DriverPositionData, DriverData } from '../../domain/ports/official-results.provider';
 
 const OPENF1_BASE_URL = 'https://api.openf1.org/v1';
 
@@ -35,6 +35,8 @@ export class OpenF1Adapter implements OfficialResultsProvider {
         const meetings = meetingsRes.data.filter(m => m.meeting_name.includes('Grand Prix'));
         const sessions = sessionsRes.data;
 
+
+
         return meetings.map(meeting => {
             const qualifying = sessions.find(
                 s => s.meeting_key === meeting.meeting_key && s.session_name === 'Qualifying'
@@ -44,10 +46,21 @@ export class OpenF1Adapter implements OfficialResultsProvider {
                 s => s.meeting_key === meeting.meeting_key && s.session_name === 'Race'
             );
 
+            const latestSession = sessions
+            .filter(s => s.meeting_key === meeting.meeting_key)
+            .reduce<OpenF1Session | null>((latest, current) => {
+                if (!latest) return current;
+        
+                return new Date(current.date_start) > new Date(latest.date_start)
+                    ? current
+                    : latest;
+            }, null);
+
             return {
                 meetingKey: meeting.meeting_key,
                 raceSessionKey: race ? race.session_key : null,
                 qualifyingSessionKey: qualifying ? qualifying.session_key : null,
+                latestSessionKey: latestSession?.session_key ?? null,
                 name: meeting.meeting_name,
                 circuit: meeting.circuit_short_name,
                 country: meeting.country_name,
@@ -85,5 +98,27 @@ export class OpenF1Adapter implements OfficialResultsProvider {
 
         const uniqueDrivers = new Set(res.data.map(p => p.driver_number));
         return uniqueDrivers.size >= 18;
+    }
+
+    async hasSafetyCar(sessionKey: number): Promise<boolean> {
+        const res = await axios.get(`${OPENF1_BASE_URL}/race_control?session_key=${sessionKey}&category=SafetyCar`);
+
+        return res.data.some(
+            (entry: { message: string }) => entry.message === 'SAFETY CAR DEPLOYED'
+        );
+    }
+
+    async getDrivers(sessionKey: number): Promise<DriverData[]> {
+        const res = await axios.get(
+            `${OPENF1_BASE_URL}/drivers?session_key=${sessionKey}`
+        );
+
+        return res.data.map((d: any) => ({
+            driverNumber: d.driver_number,
+            fullName: d.full_name,
+            acronym: d.name_acronym,
+            teamName: d.team_name,
+            teamColour: d.team_colour,
+        }));
     }
 }

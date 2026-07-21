@@ -5,7 +5,9 @@ import { SyncCalendarUseCase } from './sync-calendar.use-case'
 const mockOfficialResultsProvider: jest.Mocked<OfficialResultsProvider> = {
     getMeetings: jest.fn(),
     getDriverPositions: jest.fn(),
+    getDrivers: jest.fn(),
     hasRaceResults: jest.fn(),
+    hasSafetyCar: jest.fn(),
 }
 
 const mockRaceRepository: jest.Mocked<RaceRepository> = {
@@ -18,41 +20,43 @@ const mockRaceRepository: jest.Mocked<RaceRepository> = {
 }
 
 const fakeMeetings: RaceMeetingData[] = [
-    {
-      meetingKey: 1,
-      name: 'Australian Grand Prix',
-      circuit: 'Melbourne',
-      country: 'Australia',
-      qualifyingStartAt: new Date('2026-03-07'),
-      raceStartAt: new Date('2026-03-08'),
-      isCancelled: false,
-      raceSessionKey: 111,
-      qualifyingSessionKey: 222
-    },
-    {
-      meetingKey: 2,
-      name: 'Chinese Grand Prix',
-      circuit: 'Shanghai',
-      country: 'China',
-      qualifyingStartAt: new Date('2026-03-14'),
-      raceStartAt: new Date('2026-03-15'),
-      isCancelled: false,
-      raceSessionKey: 333,
-      qualifyingSessionKey: 444,
-    },
-    {
-      meetingKey: 3,
-      name: 'test Grand Prix',
-      circuit: 'test',
-      country: 'test',
-      qualifyingStartAt: new Date('2026-03-15'),
-      raceStartAt: null,
-      isCancelled: true,
-      raceSessionKey: 555,
-      qualifyingSessionKey: 666,
-    },
-  ];
-
+  {
+    meetingKey: 1,
+    name: 'Australian Grand Prix',
+    circuit: 'Melbourne',
+    country: 'Australia',
+    qualifyingStartAt: new Date('2026-03-07'),
+    raceStartAt: new Date('2026-03-08'),
+    isCancelled: false,
+    raceSessionKey: 111,
+    qualifyingSessionKey: 222,
+    latestSessionKey: 111,
+  },
+  {
+    meetingKey: 2,
+    name: 'Chinese Grand Prix',
+    circuit: 'Shanghai',
+    country: 'China',
+    qualifyingStartAt: new Date('2026-03-14'),
+    raceStartAt: new Date('2026-03-15'),
+    isCancelled: false,
+    raceSessionKey: 333,
+    qualifyingSessionKey: 444,
+    latestSessionKey: 333,
+  },
+  {
+    meetingKey: 3,
+    name: 'test Grand Prix',
+    circuit: 'test',
+    country: 'test',
+    qualifyingStartAt: new Date('2026-03-15'),
+    raceStartAt: null,
+    isCancelled: true,
+    raceSessionKey: 555,
+    qualifyingSessionKey: 666,
+    latestSessionKey: 666,
+  },
+];
   const disorderedMeetings: RaceMeetingData[] = [
     {
       meetingKey: 1,
@@ -64,6 +68,7 @@ const fakeMeetings: RaceMeetingData[] = [
       isCancelled: false,
       raceSessionKey: 555,
       qualifyingSessionKey: 666,
+      latestSessionKey: 111,
     },
     {
       meetingKey: 2,
@@ -75,6 +80,7 @@ const fakeMeetings: RaceMeetingData[] = [
       isCancelled: false,
       raceSessionKey: 555,
       qualifyingSessionKey: 666,
+      latestSessionKey: 222,
     },
     {
       meetingKey: 3,
@@ -86,6 +92,7 @@ const fakeMeetings: RaceMeetingData[] = [
       isCancelled: true,
       raceSessionKey: 555,
       qualifyingSessionKey: 666,
+      latestSessionKey: 666,
     },
   ];
 

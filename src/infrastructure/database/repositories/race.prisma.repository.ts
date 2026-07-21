@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RaceRepository } from '../../../domain/ports/race.repository';
 import { RaceMeetingData } from '../../../domain/ports/official-results.provider';
 import { RaceStatus as DomainRaceStatus } from '../../../domain/enums/race-status.enum';
-import { RaceStatus as PrismaRaceStatus } from '@prisma/client';
+import { RaceStatus as PrismaRaceStatus, RaceStatus } from '@prisma/client';
 import { RaceMapper } from '../mappers/race.mapper';
 
 @Injectable()

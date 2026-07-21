@@ -17,7 +17,9 @@ const mockRaceRepository: jest.Mocked<RaceRepository> = {
 const mockOfficialResultsProvider: jest.Mocked<OfficialResultsProvider> = {
     getMeetings: jest.fn(),
     getDriverPositions: jest.fn(),
+    getDrivers: jest.fn(),
     hasRaceResults: jest.fn(),
+    hasSafetyCar: jest.fn(),
 }
 
 const fakeRaces = [
