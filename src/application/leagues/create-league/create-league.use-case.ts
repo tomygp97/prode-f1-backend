@@ -17,6 +17,7 @@ export class CreateLeagueUseCase {
     name: string;
     ownerId: string;
     isPublic: boolean;
+    predictionSlots?: number;
     seasonId: string;
     trackedDriverId?: string | null;
   }): Promise<League> {
@@ -26,6 +27,7 @@ export class CreateLeagueUseCase {
       ownerId: input.ownerId,
       inviteCode: this.codeGen.generate(),
       isPublic: input.isPublic,
+      predictionSlots: input.predictionSlots,
       seasonId: input.seasonId,
       trackedDriverId: input.trackedDriverId ?? null,
     });

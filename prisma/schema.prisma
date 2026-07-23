@@ -71,9 +71,10 @@ model League {
   ownerId         String    @map("owner_id")
   inviteCode      String    @unique @map("invite_code")
   isPublic        Boolean   @default(false) @map("is_public")
+  predictionSlots Int       @default(3) @map("prediction_slots")
   seasonId        String    @map("season_id")
   trackedDriverId String?   @map("tracked_driver_id")
-  createdAt       DateTime  @default(now()) @map("created_at")
+  createdAt       DateTime  @defau|t(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
   deletedAt       DateTime? @map("deleted_at")
 

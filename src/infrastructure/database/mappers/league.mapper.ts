@@ -9,6 +9,7 @@ export class LeagueMapper {
       ownerId: raw.ownerId,
       inviteCode: raw.inviteCode,
       isPublic: raw.isPublic,
+      predictionSlots: raw.predictionSlots,
       seasonId: raw.seasonId,
       trackedDriverId: raw.trackedDriverId,
     });
@@ -21,6 +22,7 @@ export class LeagueMapper {
       ownerId: league.ownerId,
       inviteCode: league.inviteCode,
       isPublic: league.isPublic,
+      predictionSlots: league.predictionSlots,
       seasonId: league.seasonId,
       trackedDriverId: league.trackedDriverId,
     };

@@ -13,6 +13,9 @@ import { ListLeagueMembersUseCase } from '../../application/leagues/list-league-
 import { SetLeaguePrizesUseCase } from '../../application/leagues/set-league-prizes/set-league-prizes.use-case';
 import { GetLeaguePrizesUseCase } from '../../application/leagues/get-league-prizes/get-league-prizes.use-case';
 import { TransferLeagueOwnershipUseCase } from '../../application/leagues/transfer-league-ownership/transfer-league-ownership.use-case';
+import { SetLeaguePredictionSlotsUseCase } from '../../application/leagues/set-league-prediction-slots/set-league-prediction-slots.use-case';
+import { JoinPublicLeagueUseCase } from '../../application/leagues/join-public-league/join-public-league.use-case';
+
 
 // Puertos (ahora clases abstractas, necesitamos importarlas como valores reales)
 import { LeagueRepository } from '../../domain/ports/league.repository';
@@ -41,6 +44,8 @@ import { NanoIdInviteCodeGenerator } from '../services/invite-code.generator';
     SetLeaguePrizesUseCase,
     GetLeaguePrizesUseCase,
     TransferLeagueOwnershipUseCase,
+    SetLeaguePredictionSlotsUseCase,
+    JoinPublicLeagueUseCase,
 
     // Puerto ↔ implementación (ahora sin comillas, la clase directo)
     { provide: LeagueRepository, useClass: LeaguePrismaRepository },
