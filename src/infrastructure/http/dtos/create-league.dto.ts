@@ -1,4 +1,4 @@
-import { IsString, IsBoolean, IsUUID, IsOptional, MinLength } from 'class-validator';
+import { IsString, IsBoolean, IsUUID, IsOptional, IsInt, Min, Max, MinLength } from 'class-validator';
 
 export class CreateLeagueDto {
   @IsString()
@@ -7,6 +7,12 @@ export class CreateLeagueDto {
 
   @IsBoolean()
   isPublic!: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(3)
+  @Max(22)
+  predictionSlots?: number;  // 👈 nuevo, opcional (si no viene, la entidad usa el default 3)
 
   @IsUUID()
   seasonId!: string;
