@@ -33,5 +33,6 @@ import { DriverPrismaRepository } from '../database/repositories/driver.prisma.r
       { provide: TeamRepository, useClass: TeamPrismaRepository },
       { provide: DriverRepository, useClass: DriverPrismaRepository },
     ],
+    exports: [RaceRepository], // 👈 nuevo, necesario para que PredictionsModule lo use
   })
 export class RacesModule{}
