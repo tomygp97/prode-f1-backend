@@ -25,10 +25,10 @@ export class DriverPrismaRepository implements DriverRepository {
         return driver.id;
     }
 
-    async findByDriverNumber(driverNumber: number, seasonId: string): Promise<{ id: string } | null> {
+    async findByDriverNumber(driverNumber: number, seasonId: string): Promise<{ id: string, teamId: string } | null> {
         return this.prisma.driver.findUnique({
             where: { driverNumber_seasonId: { driverNumber, seasonId } },
-            select: { id: true },
+            select: { id: true, teamId: true },
         });
     }
 }

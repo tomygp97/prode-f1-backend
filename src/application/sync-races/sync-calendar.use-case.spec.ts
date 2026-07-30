@@ -4,7 +4,7 @@ import { SyncCalendarUseCase } from './sync-calendar.use-case'
 
 const mockOfficialResultsProvider: jest.Mocked<OfficialResultsProvider> = {
     getMeetings: jest.fn(),
-    getDriverPositions: jest.fn(),
+    getSessionResults: jest.fn(),
     getDrivers: jest.fn(),
     hasRaceResults: jest.fn(),
     hasSafetyCar: jest.fn(),
@@ -12,6 +12,7 @@ const mockOfficialResultsProvider: jest.Mocked<OfficialResultsProvider> = {
 
 const mockRaceRepository: jest.Mocked<RaceRepository> = {
     upsertFromMeeting: jest.fn(),
+    findById: jest.fn(),
     findAll: jest.fn(),
     findNext: jest.fn(),
     findScheduledBeforeDate: jest.fn(),

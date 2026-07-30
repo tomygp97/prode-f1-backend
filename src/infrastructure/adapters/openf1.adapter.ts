@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
-import type { OfficialResultsProvider, RaceMeetingData, DriverPositionData, DriverData } from '../../domain/ports/official-results.provider';
+import type { OfficialResultsProvider, RaceMeetingData, DriverData, DriverSessionResult } from '../../domain/ports/official-results.provider';
 
 const OPENF1_BASE_URL = 'https://api.openf1.org/v1';
 
@@ -19,10 +19,13 @@ interface OpenF1Session {
     date_start: string;
 };
 
-interface OpenF1Position {
+interface OpenF1SessionResult {
     driver_number: number;
     position: number;
-};
+    dnf: boolean;
+    dns: boolean;
+    dsq: boolean;
+}
 
 @Injectable()
 export class OpenF1Adapter implements OfficialResultsProvider {
@@ -71,33 +74,22 @@ export class OpenF1Adapter implements OfficialResultsProvider {
         });
     }
 
-    async getDriverPositions(sessionKey: number): Promise<DriverPositionData[]> {
-        const res = await axios.get<OpenF1Position[]>(
-            `${OPENF1_BASE_URL}/position?session_key=${sessionKey}&position<=20`
+    async getSessionResults(sessionKey: number): Promise<DriverSessionResult[]> {
+        const res = await axios.get(
+            `${OPENF1_BASE_URL}/session_result?session_key=${sessionKey}`
         );
-
-        // OpenF1 devuelve múltiples entradas por piloto (una por vuelta), nos quedamos con la última posición de cada uno
-        const latest = new Map<number, OpenF1Position>();
-        for (const entry of res.data) {
-            latest.set(entry.driver_number, entry);
-        }
-
-        return Array.from(latest.values()).map(entry => ({
+    
+        return res.data.map((entry: any) => ({
             externalDriverNumber: entry.driver_number,
             position: entry.position,
-            dnf: false, //TODO: Lo refinamos cuando tengamos race_control
-        }))
+            dnf: entry.dnf,
+        }));
     }
 
     async hasRaceResults(sessionKey: number): Promise<boolean> {
-        const res = await axios.get<OpenF1Position[]>(
-            `${OPENF1_BASE_URL}/position?session_key=${sessionKey}`
-        );
+        const results = await this.getSessionResults(sessionKey);
 
-        if (res.data.length === 0) return false;
-
-        const uniqueDrivers = new Set(res.data.map(p => p.driver_number));
-        return uniqueDrivers.size >= 18;
+        return results.length > 0;
     }
 
     async hasSafetyCar(sessionKey: number): Promise<boolean> {

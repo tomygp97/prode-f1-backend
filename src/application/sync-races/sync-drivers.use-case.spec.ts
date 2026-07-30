@@ -5,7 +5,7 @@ import { SyncDriversUseCase } from "./sync-drivers.use-case";
 
 const mockOfficialResultsProvider: jest.Mocked<OfficialResultsProvider> = {
     getMeetings: jest.fn(),
-    getDriverPositions: jest.fn(),
+    getSessionResults: jest.fn(),
     getDrivers: jest.fn(),
     hasRaceResults: jest.fn(),
     hasSafetyCar: jest.fn(),
@@ -14,7 +14,7 @@ const mockTeamRepository: jest.Mocked<TeamRepository> = {
     upsert: jest.fn(),
     findByName: jest.fn(),
 }
-const mockDriverRepository = {
+const mockDriverRepository: jest.Mocked<DriverRepository> = {
     upsert: jest.fn(),
     findByDriverNumber: jest.fn(),
 }

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Race } from '../../../domain/entities/race.entity';
 import { RaceRepository } from '../../../domain/ports/race.repository';
 import { RaceMeetingData } from '../../../domain/ports/official-results.provider';
 import { RaceStatus as DomainRaceStatus } from '../../../domain/enums/race-status.enum';
@@ -37,6 +38,17 @@ export class RacePrismaRepository implements RaceRepository {
             },    
         });
     };
+
+    async findById(id: string): Promise<Race | null> {
+        const race = await this.prisma.race.findUnique({
+            where: { id },
+        });
+
+        if (!race) {
+            return null;
+        }
+        return RaceMapper.toDomain(race);
+    }
 
     async findAll() {
         const races = await this.prisma.race.findMany({
