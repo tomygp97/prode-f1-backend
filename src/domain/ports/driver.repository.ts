@@ -1,5 +1,6 @@
 export interface DriverRepositoryResult {
     id: string;
+    driverNumber: number;
     teamId: string;
 }
 
@@ -12,8 +13,8 @@ export abstract class DriverRepository {
         seasonId: string;
     }): Promise<string>;
 
-    abstract findByDriverNumber(
-        driverNumber: number,
-        seasonId: string
-    ): Promise<DriverRepositoryResult | null>;
+    abstract findByDriverNumbers(
+        seasonId: string,
+        driverNumbers: number[],
+    ): Promise<DriverRepositoryResult[]>;
 }

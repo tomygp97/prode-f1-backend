@@ -23,6 +23,12 @@ export class SyncRaceResultsUseCase{
     async execute(race: Race): Promise<void> {
         this.logger.log(`Syncing results for ${race.name}`);
 
+        if (race.status !== RaceStatus.FINISHED) {
+            throw new Error(
+                `Race ${race.name} is not ready for results synchronization`,
+            );
+        }
+
         if (!race.raceSessionKey) {
             throw new Error(
                 `Race ${race.name} does not have a race session key`,
@@ -42,42 +48,52 @@ export class SyncRaceResultsUseCase{
         ]);
 
         const dnfCount = sessionResults.filter(result => result.dnf).length;
+
         const poleResult = qualifyingResults.find(
             result => result.position === 1
         );
-
         if (!poleResult) {
             throw new Error(
                 `Could not find pole position for ${race.name}`
             );
         }
 
-        const poleDriver = await this.driverRepository.findByDriverNumber(
-            poleResult.externalDriverNumber,
-            race.seasonId
-        );
-
-        if (!poleDriver) {
-            throw new Error(
-                `Pole driver ${poleResult.externalDriverNumber} not found for season ${race.seasonId} while syncing ${race.name}`,
-            );
-        }
-
         const winner = sessionResults.find(
             result => result.position === 1
         );
-
         if (!winner) {
             throw new Error(
                 `Could not find race winner for ${race.name}`
             );
         }
 
-        const winnerDriver = await this.driverRepository.findByDriverNumber(
-            winner.externalDriverNumber,
-            race.seasonId
+        const driverNumbers = [
+            ...new Set([
+                ...sessionResults.map(r => r.externalDriverNumber),
+                poleResult.externalDriverNumber,
+            ]),
+        ];
+
+        const drivers = await this.driverRepository.findByDriverNumbers(
+            race.seasonId,
+            driverNumbers,
         );
 
+        const driversByNumber  = new Map(
+            drivers.map(driver => [
+                driver.driverNumber,
+                driver,
+            ]),
+        );
+
+        const poleDriver = driversByNumber.get(poleResult.externalDriverNumber);
+        if (!poleDriver) {
+            throw new Error(
+                `Pole driver ${poleResult.externalDriverNumber} not found for season ${race.seasonId} while syncing ${race.name}`,
+            );
+        }
+
+        const winnerDriver = driversByNumber.get(winner.externalDriverNumber);
         if (!winnerDriver) {
             throw new Error(
                 `Race winner driver ${winner.externalDriverNumber} not found for season ${race.seasonId} while syncing ${race.name}`,
@@ -86,10 +102,7 @@ export class SyncRaceResultsUseCase{
 
         const raceDriversResults: ReplaceRaceDriverResultData[] = [];
         for (const result of sessionResults) {
-            const driver = await this.driverRepository.findByDriverNumber(
-                result.externalDriverNumber, race.seasonId
-            );
-
+            const driver = driversByNumber.get(result.externalDriverNumber)
             if (!driver) {
                 throw new Error(
                     `Driver ${result.externalDriverNumber} not found for season ${race.seasonId} while syncing ${race.name}`,

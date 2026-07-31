@@ -17,7 +17,7 @@ const mockOfficialResultsProvider: jest.Mocked<OfficialResultsProvider> = {
 
 const mockDriverRepository: jest.Mocked<DriverRepository> = {
     upsert: jest.fn(),
-    findByDriverNumber: jest.fn(),
+    findByDriverNumbers: jest.fn(),
 };
 
 const mockRaceResultRepository: jest.Mocked<RaceResultRepository> = {
@@ -97,20 +97,23 @@ describe('SyncRaceResultsUseCase', () => {
             .mockResolvedValueOnce(fakeQualifyingResults);
         mockOfficialResultsProvider.hasSafetyCar.mockResolvedValue(true);
 
-        mockDriverRepository.findByDriverNumber.mockImplementation(
-            async (driverNumber) => {
-                switch (driverNumber) {
-                    case 1:
-                        return { id: 'driver-1', teamId: 'team-redbull' };
-                    case 16:
-                        return { id: 'driver-16', teamId: 'team-ferrari' };
-                    case 63:
-                        return { id: 'driver-63', teamId: 'team-mercedes' };
-                    default:
-                        return null;
-                }
-            }
-        );
+        mockDriverRepository.findByDriverNumbers.mockResolvedValue([
+            {
+                id: 'driver-1',
+                driverNumber: 1,
+                teamId: 'team-redbull',
+            },
+            {
+                id: 'driver-16',
+                driverNumber: 16,
+                teamId: 'team-ferrari',
+            },
+            {
+                id: 'driver-63',
+                driverNumber: 63,
+                teamId: 'team-mercedes',
+            },
+        ]);
         mockRaceResultRepository.upsert.mockResolvedValue();
         mockRaceDriverResultRepository.replaceMany.mockResolvedValue();
         mockRaceRepository.updateStatus.mockResolvedValue();
@@ -193,7 +196,7 @@ describe('SyncRaceResultsUseCase', () => {
 
         await expect(useCase.execute(fakeRace)).rejects.toThrow('Could not find pole position for Australian GP');
 
-        expect(mockDriverRepository.findByDriverNumber).not.toHaveBeenCalled();
+        expect(mockDriverRepository.findByDriverNumbers).not.toHaveBeenCalled();
         expect(mockRaceResultRepository.upsert).not.toHaveBeenCalled();
         expect(mockRaceDriverResultRepository.replaceMany).not.toHaveBeenCalled();
         expect(mockRaceRepository.updateStatus).not.toHaveBeenCalled();
@@ -219,7 +222,7 @@ describe('SyncRaceResultsUseCase', () => {
 
         await expect(useCase.execute(fakeRace)).rejects.toThrow('Could not find race winner for Australian GP');
 
-        expect(mockDriverRepository.findByDriverNumber).toHaveBeenCalledWith(16, 'season-1');
+        expect(mockDriverRepository.findByDriverNumbers).not.toHaveBeenCalled();
         expect(mockRaceResultRepository.upsert).not.toHaveBeenCalled();
         expect(mockRaceDriverResultRepository.replaceMany).not.toHaveBeenCalled();
         expect(mockRaceRepository.updateStatus).not.toHaveBeenCalled();
@@ -242,7 +245,7 @@ describe('SyncRaceResultsUseCase', () => {
             .mockResolvedValueOnce(fakeRaceSessionResults)
             .mockResolvedValueOnce(fakeQualifyingResultsWithUnknownPoleDriver);
         mockOfficialResultsProvider.hasSafetyCar.mockResolvedValue(false);
-        mockDriverRepository.findByDriverNumber.mockResolvedValue(null);
+        mockDriverRepository.findByDriverNumbers.mockResolvedValue([]);
 
         await expect(useCase.execute(fakeRace)).rejects.toThrow('Pole driver 9999 not found for season season-1 while syncing Australian GP');
 
@@ -265,18 +268,17 @@ describe('SyncRaceResultsUseCase', () => {
             },
         ];
 
-        const fakePoleDriver = {
-            id: 'driver-pole',
-            teamId: 'team-1',
-        };
-
         mockOfficialResultsProvider.getSessionResults
             .mockResolvedValueOnce(fakeRaceSessionResultsWithUnknownWinnerDriver)
             .mockResolvedValueOnce(fakeQualifyingResults);
         mockOfficialResultsProvider.hasSafetyCar.mockResolvedValue(false);
-        mockDriverRepository.findByDriverNumber
-            .mockResolvedValueOnce(fakePoleDriver)
-            .mockResolvedValueOnce(null);
+        mockDriverRepository.findByDriverNumbers.mockResolvedValue([
+            {
+                id: 'driver-16',
+                driverNumber: 16,
+                teamId: 'team-ferrari',
+            },
+        ]);
 
         await expect(useCase.execute(fakeRace)).rejects.toThrow('Race winner driver 9999 not found for season season-1 while syncing Australian GP');
 
@@ -317,18 +319,19 @@ describe('SyncRaceResultsUseCase', () => {
             .mockResolvedValueOnce(fakeQualifyingResults);
         mockOfficialResultsProvider.hasSafetyCar.mockResolvedValue(false);
 
-        mockDriverRepository.findByDriverNumber.mockImplementation(
-            async (driverNumber) => {
-                if (driverNumber === 9999) {
-                    return null;
-                }
-        
-                return {
-                    id: `driver-${driverNumber}`,
-                    teamId: 'team-1',
-                };
-            }
-        );
+        mockDriverRepository.findByDriverNumbers.mockResolvedValue([
+            {
+                id: 'driver-1',
+                driverNumber: 1,
+                teamId: 'team-1',
+            },
+            {
+                id: 'driver-16',
+                driverNumber: 16,
+                teamId: 'team-2',
+            },
+        ]);
+    
 
         await expect(useCase.execute(fakeRace)).rejects.toThrow('Driver 9999 not found for season season-1 while syncing Australian GP');
 

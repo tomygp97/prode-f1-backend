@@ -16,7 +16,7 @@ const mockTeamRepository: jest.Mocked<TeamRepository> = {
 }
 const mockDriverRepository: jest.Mocked<DriverRepository> = {
     upsert: jest.fn(),
-    findByDriverNumber: jest.fn(),
+    findByDriverNumbers: jest.fn(),
 }
 
 describe('SyncDriversUseCase', () => {
