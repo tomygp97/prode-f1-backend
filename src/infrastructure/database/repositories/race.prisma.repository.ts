@@ -92,6 +92,16 @@ export class RacePrismaRepository implements RaceRepository {
         return races.map(RaceMapper.toDomain);
     }
 
+    async findRacesPendingResultsSync(): Promise<Race[]> {
+        const races = await this.prisma.race.findMany({
+            where: {
+                status: RaceStatus.FINISHED,
+            }
+        });
+
+        return races.map(race => RaceMapper.toDomain(race))
+    }
+
     async updateStatus(
         raceId: string,
         status: DomainRaceStatus

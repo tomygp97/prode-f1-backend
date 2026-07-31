@@ -9,5 +9,6 @@ export abstract class RaceRepository {
   abstract findNext(): Promise<any | null>;
   abstract findScheduledBeforeDate(date: Date): Promise<any[]>;
   abstract findLockedRacesWithPastStartTime(date: Date): Promise<any[]>;
+  abstract findRacesPendingResultsSync(): Promise<Race[]>;
   abstract updateStatus(raceId: string, status: RaceStatus): Promise<void>;
 }

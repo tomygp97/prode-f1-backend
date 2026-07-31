@@ -20,6 +20,7 @@ import { RaceResultRepository } from '../../domain/ports/race-result.repository'
 import { RaceResultPrismaRepository } from '../database/repositories/race-result.prisma.repository';
 import { RaceDriverResultPrismaRepository } from '../database/repositories/race-driver-result.prisma.repository';
 import { RaceDriverResultRepository } from '../../domain/ports/race-driver-result.repository';
+import { SyncAllRaceResultsUseCase } from '../../application/sync-races/sync-all-race-results.use-case';
 
 @Module({
     imports: [
@@ -34,6 +35,7 @@ import { RaceDriverResultRepository } from '../../domain/ports/race-driver-resul
       UpdateRaceStatusUseCase,
       SyncDriversUseCase,
       SyncRaceResultsUseCase,
+      SyncAllRaceResultsUseCase,
       { provide: OfficialResultsProvider, useClass: OpenF1Adapter },
       { provide: RaceRepository, useClass: RacePrismaRepository },
       { provide: TeamRepository, useClass: TeamPrismaRepository },
