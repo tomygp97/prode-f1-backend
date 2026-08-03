@@ -71,6 +71,7 @@ model League {
   ownerId         String    @map("owner_id")
   inviteCode      String    @unique @map("invite_code")
   isPublic        Boolean   @default(false) @map("is_public")
+  predictionSlots Int       @default(3) @map("prediction_slots")
   seasonId        String    @map("season_id")
   trackedDriverId String?   @map("tracked_driver_id")
   createdAt       DateTime  @default(now()) @map("created_at")
@@ -83,6 +84,7 @@ model League {
   members       LeagueMember[]
   rankings      LeagueRanking[]
   prizes        LeaguePrize[]
+  predictions Prediction[] 
 
   @@map("leagues")
 }
@@ -148,29 +150,27 @@ model Race {
 }
 
 model Prediction {
-  id             String    @id @default(uuid())
-  userId         String    @map("user_id")
-  raceId         String    @map("race_id")
+  id                     String    @id @default(uuid())
+  userId                 String    @map("user_id")
+  leagueId               String    @map("league_id")
+  raceId                 String    @map("race_id")
 
-  poleDriverId   String    @map("pole_driver_id")
-  top1DriverId   String    @map("top1_driver_id")
-  top2DriverId   String    @map("top2_driver_id")
-  top3DriverId   String    @map("top3_driver_id")
-  top4DriverId   String    @map("top4_driver_id")
-  top5DriverId   String    @map("top5_driver_id")
+  predictedOrder         Json      @map("predicted_order")
+  trackedDriverPosition  Int?      @map("tracked_driver_position")
 
-  safetyCar      Boolean   @map("safety_car")
-  dnfCount       Int       @map("dnf_count")
+  safetyCar              Boolean   @map("safety_car")
+  dnfCount               Int       @map("dnf_count")
 
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
-  deletedAt      DateTime? @map("deleted_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  deletedAt              DateTime? @map("deleted_at")
 
-  user  User  @relation(fields: [userId], references: [id])
-  race  Race  @relation(fields: [raceId], references: [id])
-  score PredictionScore?
+  user   User   @relation(fields: [userId], references: [id])
+  league League @relation(fields: [leagueId], references: [id])
+  race   Race   @relation(fields: [raceId], references: [id])
+  score  PredictionScore?
 
-  @@unique([raceId, userId])
+  @@unique([leagueId, raceId, userId])
   @@map("predictions")
 }
 

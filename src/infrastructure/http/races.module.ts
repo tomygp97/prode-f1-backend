@@ -45,5 +45,6 @@ import { SyncRaceResultsJob } from '../jobs/sync-race-results.job';
       { provide: RaceResultRepository, useClass: RaceResultPrismaRepository },
       { provide: RaceDriverResultRepository, useClass: RaceDriverResultPrismaRepository },
     ],
+    exports: [RaceRepository], // 👈 nuevo, necesario para que PredictionsModule lo use
   })
 export class RacesModule{}

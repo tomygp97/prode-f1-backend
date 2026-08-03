@@ -6,6 +6,7 @@ import { RaceMeetingData } from '../../../domain/ports/official-results.provider
 import { RaceStatus as DomainRaceStatus } from '../../../domain/enums/race-status.enum';
 import { RaceStatus as PrismaRaceStatus, RaceStatus } from '@prisma/client';
 import { RaceMapper } from '../mappers/race.mapper';
+import { Race } from '../../../domain/entities/race.entity';
 
 @Injectable()
 export class RacePrismaRepository implements RaceRepository {
@@ -112,5 +113,13 @@ export class RacePrismaRepository implements RaceRepository {
                 status: RaceMapper.toPrismaStatus(status),
             },
         });
+    }
+
+    async findById(id: string): Promise<Race | null> {
+        const race = await this.prisma.race.findUnique({
+            where: { id },
+        });
+
+        return race ? RaceMapper.toDomain(race) : null;
     }
 }
