@@ -53,5 +53,6 @@ import { NanoIdInviteCodeGenerator } from '../services/invite-code.generator';
     { provide: LeaguePrizeRepository, useClass: LeaguePrizePrismaRepository },
     { provide: InviteCodeGenerator, useClass: NanoIdInviteCodeGenerator },
   ],
+  exports: [LeagueRepository, LeagueMemberRepository],
 })
 export class LeaguesModule {}
