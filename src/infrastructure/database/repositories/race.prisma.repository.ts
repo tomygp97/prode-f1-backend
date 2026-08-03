@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Race } from '../../../domain/entities/race.entity';
 import { RaceRepository } from '../../../domain/ports/race.repository';
 import { RaceMeetingData } from '../../../domain/ports/official-results.provider';
 import { RaceStatus as DomainRaceStatus } from '../../../domain/enums/race-status.enum';
 import { RaceStatus as PrismaRaceStatus, RaceStatus } from '@prisma/client';
 import { RaceMapper } from '../mappers/race.mapper';
-import { Race } from '../../../domain/entities/race.entity';
 
 @Injectable()
 export class RacePrismaRepository implements RaceRepository {
@@ -38,6 +38,17 @@ export class RacePrismaRepository implements RaceRepository {
             },    
         });
     };
+
+    async findById(id: string): Promise<Race | null> {
+        const race = await this.prisma.race.findUnique({
+            where: { id },
+        });
+
+        if (!race) {
+            return null;
+        }
+        return RaceMapper.toDomain(race);
+    }
 
     async findAll() {
         const races = await this.prisma.race.findMany({
@@ -81,6 +92,16 @@ export class RacePrismaRepository implements RaceRepository {
         return races.map(RaceMapper.toDomain);
     }
 
+    async findRacesPendingResultsSync(): Promise<Race[]> {
+        const races = await this.prisma.race.findMany({
+            where: {
+                status: RaceStatus.FINISHED,
+            }
+        });
+
+        return races.map(race => RaceMapper.toDomain(race))
+    }
+
     async updateStatus(
         raceId: string,
         status: DomainRaceStatus
@@ -93,11 +114,4 @@ export class RacePrismaRepository implements RaceRepository {
         });
     }
 
-    async findById(id: string): Promise<Race | null> {
-        const race = await this.prisma.race.findUnique({
-            where: { id },
-        });
-
-        return race ? RaceMapper.toDomain(race) : null;
-    }
 }

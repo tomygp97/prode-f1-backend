@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { DriverRepository } from '../../../domain/ports/driver.repository';
+import { DriverRepository, DriverRepositoryResult } from '../../../domain/ports/driver.repository';
 
 @Injectable()
 export class DriverPrismaRepository implements DriverRepository {
@@ -25,10 +25,19 @@ export class DriverPrismaRepository implements DriverRepository {
         return driver.id;
     }
 
-    async findByDriverNumber(driverNumber: number, seasonId: string): Promise<{ id: string } | null> {
-        return this.prisma.driver.findUnique({
-            where: { driverNumber_seasonId: { driverNumber, seasonId } },
-            select: { id: true },
+    async findByDriverNumbers(seasonId: string, driverNumbers: number[]): Promise<DriverRepositoryResult[]> {
+        return this.prisma.driver.findMany({
+            where: {
+                seasonId,
+                driverNumber: {
+                    in: driverNumbers,
+                }
+            },
+            select: {
+                id: true,
+                driverNumber: true,
+                teamId: true,
+            },
         });
     }
 }

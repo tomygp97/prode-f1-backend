@@ -11,9 +11,9 @@ export interface RaceMeetingData {
     isCancelled: boolean;
 }
 
-export interface DriverPositionData {
+export interface DriverSessionResult {
     externalDriverNumber: number;
-    position: number | null;
+    position: number;
     dnf: boolean;
 }
 
@@ -27,7 +27,7 @@ export interface DriverData {
 
 export abstract class OfficialResultsProvider {
     abstract getMeetings(year: number): Promise<RaceMeetingData[]>;
-    abstract getDriverPositions(sessionKey: number): Promise<DriverPositionData[]>;
+    abstract getSessionResults(sessionKey: number): Promise<DriverSessionResult[]>;
     abstract hasRaceResults(sessionKey: number): Promise<boolean>;
     abstract hasSafetyCar(sessionKey: number): Promise<boolean>;
     abstract getDrivers(sessionKey: number): Promise<DriverData[]>;

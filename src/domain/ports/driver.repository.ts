@@ -1,3 +1,9 @@
+export interface DriverRepositoryResult {
+    id: string;
+    driverNumber: number;
+    teamId: string;
+}
+
 export abstract class DriverRepository {
     abstract upsert(data: {
         driverNumber: number;
@@ -6,5 +12,9 @@ export abstract class DriverRepository {
         teamId: string;
         seasonId: string;
     }): Promise<string>;
-    abstract findByDriverNumber(driverNumber: number, seasonId: string): Promise<{ id: string } | null>;
+
+    abstract findByDriverNumbers(
+        seasonId: string,
+        driverNumbers: number[],
+    ): Promise<DriverRepositoryResult[]>;
 }
