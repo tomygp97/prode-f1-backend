@@ -1,9 +1,9 @@
-import { Race as PrsimaRace, RaceStatus as PrismaRaceStatus } from '@prisma/client';
+import { Race as PrismaRace, RaceStatus as PrismaRaceStatus } from '@prisma/client';
 import { Race } from '../../../domain/entities/race.entity';
 import { RaceStatus  as DomainRaceStatus } from '../../../domain/enums/race-status.enum';
 
 export class RaceMapper {
-    static toDomain(prismaRace: PrsimaRace): Race {
+    static toDomain(prismaRace: PrismaRace): Race {
         return Race.create({
             id: prismaRace.id,
             seasonId: prismaRace.seasonId,
