@@ -13,6 +13,7 @@ const mockPredictionRepo: jest.Mocked<PredictionRepository> = {
     save: jest.fn(),
     findByLeagueRaceAndUser: jest.fn(),
     findAllByLeagueAndRace: jest.fn(),
+    findAllByRaceId: jest.fn(),
 };
 
 const mockLeagueRepo: jest.Mocked<LeagueRepository> = {
@@ -34,12 +35,13 @@ const mockRaceRepo: jest.Mocked<RaceRepository> = {
     upsertFromMeeting: jest.fn(),
     findAll: jest.fn(),
     findById: jest.fn(),
+    findByStatus: jest.fn(), // 👈 agregar
+    findRacesPendingResultsSync: jest.fn(),
     findNext: jest.fn(),
     findScheduledBeforeDate: jest.fn(),
     findLockedRacesWithPastStartTime: jest.fn(),
     updateStatus: jest.fn(),
 };
-
 describe('SubmitPredictionUseCase', () => {
     let useCase: SubmitPredictionUseCase;
 

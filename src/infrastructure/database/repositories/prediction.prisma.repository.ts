@@ -30,4 +30,11 @@ export class PredictionPrismaRepository implements PredictionRepository {
     });
     return raws.map(PredictionMapper.toDomain);
   }
+
+  async findAllByRaceId(raceId: string): Promise<Prediction[]> {
+    const raws = await this.prisma.prediction.findMany({
+      where: { raceId },
+    });
+    return raws.map(PredictionMapper.toDomain);
+  }
 }

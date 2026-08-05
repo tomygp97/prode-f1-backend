@@ -22,5 +22,6 @@ import { PredictionPrismaRepository } from '../database/repositories/prediction.
     ListPredictionsForRaceUseCase,
     { provide: PredictionRepository, useClass: PredictionPrismaRepository },
   ],
+  exports: [PredictionRepository],
 })
 export class PredictionsModule {}
