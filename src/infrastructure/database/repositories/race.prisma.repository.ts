@@ -114,4 +114,11 @@ export class RacePrismaRepository implements RaceRepository {
         });
     }
 
+    async findByStatus(status: DomainRaceStatus): Promise<Race[]> {
+        const races = await this.prisma.race.findMany({
+            where: { status: RaceMapper.toPrismaStatus(status) },
+        });
+        return races.map(RaceMapper.toDomain);
+    }
+
 }

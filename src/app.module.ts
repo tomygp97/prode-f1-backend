@@ -3,9 +3,9 @@ import { AuthModule } from './infrastructure/http/auth.module';
 import { RacesModule } from './infrastructure/http/races.module';
 import { LeaguesModule } from './infrastructure/http/leagues.module';
 import { PredictionsModule } from './infrastructure/http/predictions.module';
-
+import { RankingModule } from './infrastructure/http/ranking.module';
 
 @Module({
-  imports: [AuthModule, RacesModule, LeaguesModule, PredictionsModule],
+  imports: [AuthModule, LeaguesModule, RacesModule, PredictionsModule, RankingModule],
 })
 export class AppModule {}

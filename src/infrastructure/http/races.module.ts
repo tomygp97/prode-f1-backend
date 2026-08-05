@@ -55,6 +55,6 @@ import { GetRaceResultsUseCase } from '../../application/races/get-race-results/
       { provide: RaceDriverResultRepository, useClass: RaceDriverResultPrismaRepository },
       { provide: RaceRepository, useClass: RacePrismaRepository },
     ],
-    exports: [RaceRepository],
+    exports: [RaceRepository, RaceResultRepository, RaceDriverResultRepository],
   })
 export class RacesModule{}
