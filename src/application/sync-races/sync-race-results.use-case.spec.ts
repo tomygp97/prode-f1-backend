@@ -22,9 +22,11 @@ const mockDriverRepository: jest.Mocked<DriverRepository> = {
 
 const mockRaceResultRepository: jest.Mocked<RaceResultRepository> = {
     upsert: jest.fn(),
+    findByRaceId: jest.fn(),
 };
 const mockRaceDriverResultRepository: jest.Mocked<RaceDriverResultRepository> = {
     replaceMany: jest.fn(),
+    findByRaceId: jest.fn(),
 };
 
 const mockRaceRepository: jest.Mocked<RaceRepository> = {

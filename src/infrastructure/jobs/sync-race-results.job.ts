@@ -7,7 +7,7 @@ export class SyncRaceResultsJob {
     private readonly logger = new Logger(SyncRaceResultsJob.name);
     constructor(private readonly syncRaceResultsUseCase: SyncAllRaceResultsUseCase) {};
 
-    @Cron(CronExpression.EVERY_MINUTE)
+    @Cron(CronExpression.EVERY_HOUR)
     async handle() {
         this.logger.log('Starting race results synchronization...');
         try {

@@ -26,6 +26,7 @@ const mockRaceRepo: jest.Mocked<RaceRepository> = {
     findNext: jest.fn(),
     findScheduledBeforeDate: jest.fn(),
     findLockedRacesWithPastStartTime: jest.fn(),
+    findRacesPendingResultsSync: jest.fn(),
     updateStatus: jest.fn(),
 };
 
