@@ -2,6 +2,7 @@ import { RaceRepository } from "../../domain/ports/race.repository";
 import { OfficialResultsProvider } from "../../domain/ports/official-results.provider";
 import { UpdateRaceStatusUseCase } from "../sync-races/update-race-statuses.use-case";
 import { RaceStatus } from "../../domain/enums/race-status.enum";
+import { Race } from "../../domain/entities/race.entity";
 
 
 
@@ -12,6 +13,7 @@ const mockRaceRepository: jest.Mocked<RaceRepository> = {
     findNext: jest.fn(),
     findScheduledBeforeDate: jest.fn(),
     findLockedRacesWithPastStartTime: jest.fn(),
+    findRacesPendingResultsSync: jest.fn(),
     updateStatus: jest.fn(),
 }
 
@@ -24,6 +26,7 @@ const mockOfficialResultsProvider: jest.Mocked<OfficialResultsProvider> = {
 }
 
 const fakeRaces = [
+    Race.create(
     {
         id: 'race-1',
         seasonId: 'season-2026',
@@ -37,7 +40,9 @@ const fakeRaces = [
         meetingKey: 1279,
         raceSessionKey: 11234,
         qualifyingSessionKey: 11230,
-    },
+    }),
+
+    Race.create(
     {
         id: 'race-2',
         seasonId: 'season-2026',
@@ -51,7 +56,9 @@ const fakeRaces = [
         meetingKey: 1280,
         raceSessionKey: 11245,
         qualifyingSessionKey: 11241,
-    },
+    }),
+
+    Race.create(
     {
         id: 'race-3',
         seasonId: 'season-2026',
@@ -65,7 +72,9 @@ const fakeRaces = [
         meetingKey: 1281,
         raceSessionKey: 11253,
         qualifyingSessionKey: 11249,
-    },
+    }),
+
+    Race.create(
     {
         id: 'race-4',
         seasonId: 'season-2026',
@@ -79,7 +88,7 @@ const fakeRaces = [
         meetingKey: 1282,
         raceSessionKey: null,
         qualifyingSessionKey: 11257,
-    },
+    }),
 ];
 
 describe('UpdateRaceStatusUseCase', () => {

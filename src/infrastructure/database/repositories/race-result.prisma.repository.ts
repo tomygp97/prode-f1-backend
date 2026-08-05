@@ -1,6 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { RaceResultRepository } from "../../../domain/ports/race-result.repository";
 import { PrismaService } from "../prisma/prisma.service";
+import { RaceResult } from "src/domain/entities/race-result.entity";
+import { RaceResultMapper } from "../mappers/race-result.mapper";
 
 
 @Injectable()
@@ -39,5 +41,16 @@ export class RaceResultPrismaRepository implements RaceResultRepository {
                 syncedAt: new Date(),
             },
         });
+    }
+
+    async findByRaceId(raceId: string): Promise<RaceResult | null> {
+        const raceResult = await this.prisma.raceResult.findUnique({
+            where: { raceId },
+        });
+
+        if (!raceResult) {
+            return null
+        }
+        return RaceResultMapper.toDomain(raceResult)
     }
 }

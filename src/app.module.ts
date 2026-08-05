@@ -6,6 +6,6 @@ import { PredictionsModule } from './infrastructure/http/predictions.module';
 
 
 @Module({
-  imports: [AuthModule, RacesModule, LeaguesModule,PredictionsModule],
+  imports: [AuthModule, RacesModule, LeaguesModule, PredictionsModule],
 })
 export class AppModule {}
