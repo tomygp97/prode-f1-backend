@@ -22,13 +22,18 @@ import { RaceDriverResultPrismaRepository } from '../database/repositories/race-
 import { RaceDriverResultRepository } from '../../domain/ports/race-driver-result.repository';
 import { SyncAllRaceResultsUseCase } from '../../application/sync-races/sync-all-race-results.use-case';
 import { SyncRaceResultsJob } from '../jobs/sync-race-results.job';
+import { RaceController } from './controllers/race.controller';
+import { GetRacesUseCase } from '../../application/races/get-races/get-races.use-case';
+import { GetRaceByIdUseCase } from '../../application/races/get-race/get-race-by-id.use-case';
+import { GetNextRaceUseCase } from '../../application/races/get-next-race/get-next-race.use-case';
+import { GetRaceResultsUseCase } from '../../application/races/get-race-results/get-race-results.use-case';
 
 @Module({
     imports: [
       DatabaseModule,
       ScheduleModule.forRoot(),
     ],
-    controllers: [DevController],
+    controllers: [RaceController, DevController],
     providers: [
       SyncCalendarJob,
       SyncCalendarUseCase,
@@ -38,13 +43,18 @@ import { SyncRaceResultsJob } from '../jobs/sync-race-results.job';
       SyncRaceResultsUseCase,
       SyncAllRaceResultsUseCase,
       SyncRaceResultsJob,
+      GetRacesUseCase,
+      GetRaceByIdUseCase,
+      GetNextRaceUseCase,
+      GetRaceResultsUseCase,
       { provide: OfficialResultsProvider, useClass: OpenF1Adapter },
       { provide: RaceRepository, useClass: RacePrismaRepository },
       { provide: TeamRepository, useClass: TeamPrismaRepository },
       { provide: DriverRepository, useClass: DriverPrismaRepository },
       { provide: RaceResultRepository, useClass: RaceResultPrismaRepository },
       { provide: RaceDriverResultRepository, useClass: RaceDriverResultPrismaRepository },
+      { provide: RaceRepository, useClass: RacePrismaRepository },
     ],
-    exports: [RaceRepository,RaceResultRepository, RaceDriverResultRepository],
+    exports: [RaceRepository, RaceResultRepository, RaceDriverResultRepository],
   })
 export class RacesModule{}

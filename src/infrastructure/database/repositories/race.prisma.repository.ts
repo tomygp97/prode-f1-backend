@@ -4,7 +4,7 @@ import { Race } from '../../../domain/entities/race.entity';
 import { RaceRepository } from '../../../domain/ports/race.repository';
 import { RaceMeetingData } from '../../../domain/ports/official-results.provider';
 import { RaceStatus as DomainRaceStatus } from '../../../domain/enums/race-status.enum';
-import { RaceStatus as PrismaRaceStatus, RaceStatus } from '@prisma/client';
+import { RaceStatus as PrismaRaceStatus } from '@prisma/client';
 import { RaceMapper } from '../mappers/race.mapper';
 
 @Injectable()
@@ -50,12 +50,12 @@ export class RacePrismaRepository implements RaceRepository {
         return RaceMapper.toDomain(race);
     }
 
-    async findAll() {
+    async findAll(): Promise<Race[]> {
         const races = await this.prisma.race.findMany({
             orderBy: { round: 'asc' }
         });
     
-        return races.map(RaceMapper.toDomain);
+        return races.map(race => RaceMapper.toDomain(race));
     };
 
     async findNext() {
@@ -78,7 +78,7 @@ export class RacePrismaRepository implements RaceRepository {
             },
         });
     
-        return races.map(RaceMapper.toDomain);
+        return races.map(race => RaceMapper.toDomain(race));
     };
 
     async findLockedRacesWithPastStartTime(date: Date) {
@@ -89,13 +89,13 @@ export class RacePrismaRepository implements RaceRepository {
             }
         });
     
-        return races.map(RaceMapper.toDomain);
+        return races.map(race => RaceMapper.toDomain(race));
     }
 
     async findRacesPendingResultsSync(): Promise<Race[]> {
         const races = await this.prisma.race.findMany({
             where: {
-                status: RaceStatus.FINISHED,
+                status: PrismaRaceStatus.FINISHED,
             }
         });
 
