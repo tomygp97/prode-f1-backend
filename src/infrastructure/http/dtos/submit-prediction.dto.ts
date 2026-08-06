@@ -7,6 +7,9 @@ export class SubmitPredictionDto {
   @IsUUID('4', { each: true })
   predictedOrder: string[];
 
+  @IsUUID()
+  predictedPoleDriverId: string;
+
   @IsOptional()
   @IsInt()
   @Min(1)

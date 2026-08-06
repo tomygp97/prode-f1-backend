@@ -156,6 +156,7 @@ model Prediction {
   raceId                 String    @map("race_id")
 
   predictedOrder         Json      @map("predicted_order")
+  predictedPoleDriverId  String   @map("predicted_pole_driver_id")
   trackedDriverPosition  Int?      @map("tracked_driver_position")
 
   safetyCar              Boolean   @map("safety_car")

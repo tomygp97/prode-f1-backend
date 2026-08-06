@@ -27,6 +27,7 @@ export class PredictionController {
       raceId,
       userId: user.userId,
       predictedOrder: dto.predictedOrder,
+      predictedPoleDriverId: dto.predictedPoleDriverId,
       trackedDriverPosition: dto.trackedDriverPosition,
       safetyCar: dto.safetyCar,
       dnfCount: dto.dnfCount,

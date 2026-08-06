@@ -21,6 +21,7 @@ export class SubmitPredictionUseCase {
     raceId: string;
     userId: string;
     predictedOrder: string[];
+    predictedPoleDriverId: string; 
     trackedDriverPosition?: number | null;
     safetyCar: boolean;
     dnfCount: number;
@@ -66,6 +67,7 @@ export class SubmitPredictionUseCase {
       leagueId: input.leagueId,
       raceId: input.raceId,
       predictedOrder: input.predictedOrder,
+      predictedPoleDriverId: input.predictedPoleDriverId,
       trackedDriverPosition: input.trackedDriverPosition ?? null,
       safetyCar: input.safetyCar,
       dnfCount: input.dnfCount,
