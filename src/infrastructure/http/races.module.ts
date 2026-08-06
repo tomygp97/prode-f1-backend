@@ -27,6 +27,16 @@ import { GetRacesUseCase } from '../../application/races/get-races/get-races.use
 import { GetRaceByIdUseCase } from '../../application/races/get-race/get-race-by-id.use-case';
 import { GetNextRaceUseCase } from '../../application/races/get-next-race/get-next-race.use-case';
 import { GetRaceResultsUseCase } from '../../application/races/get-race-results/get-race-results.use-case';
+import { CalculateAllPendingScoresUseCase } from '../../application/ranking/calculate-all-pending-scores/calculate-all-pending-scores.use-case';
+import { CalculateRaceScoresUseCase } from '../../application/ranking/calculate-race-scores/calculate-race-scores.use-case';
+import { PredictionRepository } from '../../domain/ports/prediction.repository';
+import { PredictionPrismaRepository } from '../database/repositories/prediction.prisma.repository';
+import { PredictionScoreRepository } from '../../domain/ports/prediction-score.repository';
+import { PredictionScorePrismaRepository } from '../database/repositories/prediction-score.prisma.repository';
+import { LeagueRankingRepository } from '../../domain/ports/league-ranking.repository';
+import { LeagueRankingPrismaRepository } from '../database/repositories/league-ranking.prisma.repository';
+import { LeagueRepository } from '../../domain/ports/league.repository';
+import { LeaguePrismaRepository } from '../database/repositories/league.prisma.repository';
 
 @Module({
     imports: [
@@ -47,10 +57,16 @@ import { GetRaceResultsUseCase } from '../../application/races/get-race-results/
       GetRaceByIdUseCase,
       GetNextRaceUseCase,
       GetRaceResultsUseCase,
+      CalculateAllPendingScoresUseCase,
+      CalculateRaceScoresUseCase,
       { provide: OfficialResultsProvider, useClass: OpenF1Adapter },
       { provide: RaceRepository, useClass: RacePrismaRepository },
       { provide: TeamRepository, useClass: TeamPrismaRepository },
       { provide: DriverRepository, useClass: DriverPrismaRepository },
+      { provide: PredictionRepository, useClass: PredictionPrismaRepository },
+      { provide: PredictionScoreRepository, useClass: PredictionScorePrismaRepository },
+      { provide: LeagueRankingRepository, useClass: LeagueRankingPrismaRepository },
+      { provide: LeagueRepository, useClass: LeaguePrismaRepository },
       { provide: RaceResultRepository, useClass: RaceResultPrismaRepository },
       { provide: RaceDriverResultRepository, useClass: RaceDriverResultPrismaRepository },
       { provide: RaceRepository, useClass: RacePrismaRepository },

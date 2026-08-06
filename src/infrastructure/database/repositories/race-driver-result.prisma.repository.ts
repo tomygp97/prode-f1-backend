@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { RaceDriverResultRepository } from "../../../domain/ports/race-driver-result.repository";
 import { PrismaService } from "../prisma/prisma.service";
-import { RaceDriverResult } from "src/domain/entities/race-driver-result.entity";
+import { RaceDriverResult } from "../../../domain/entities/race-driver-result.entity";
 import { RaceDriverResultMapper } from "../mappers/race-driver-result.mapper";
 
 

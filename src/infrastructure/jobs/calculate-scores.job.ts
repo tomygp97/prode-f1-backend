@@ -8,7 +8,7 @@ export class CalculateScoresJob {
 
   constructor(private readonly calculateAllPendingScores: CalculateAllPendingScoresUseCase) {}
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_HOUR)
   async handle() {
     this.logger.log('Starting score calculation...');
     try {

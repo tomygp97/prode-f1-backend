@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DriverRepository, DriverRepositoryResult } from '../../../domain/ports/driver.repository';
+import { Driver } from '../../../domain/entities/driver.entity';
+import { DriverMapper } from '../mappers/driver.mapper';
 
 @Injectable()
 export class DriverPrismaRepository implements DriverRepository {
@@ -39,5 +41,21 @@ export class DriverPrismaRepository implements DriverRepository {
                 teamId: true,
             },
         });
+    }
+
+    async findAll(): Promise<Driver[]> {
+        const drivers = await this.prisma.driver.findMany({
+            orderBy: { driverNumber: 'asc' },
+        });
+
+        return drivers.map(d => DriverMapper.toDomain(d));
+    }
+
+    async findById(id: string): Promise<Driver | null> {
+        const driver = await this.prisma.driver.findUnique({
+            where: { id },
+        });
+
+        return driver ? DriverMapper.toDomain(driver) : null
     }
 }
