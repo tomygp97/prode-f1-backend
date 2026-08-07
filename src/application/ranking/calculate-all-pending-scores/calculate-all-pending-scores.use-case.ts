@@ -13,7 +13,7 @@ export class CalculateAllPendingScoresUseCase {
   ) {}
 
   async execute(): Promise<void> {
-    const races = await this.raceRepo.findByStatus(RaceStatus.RESULTS_SYNCED);
+    const races = await this.raceRepo.findRacesPendingScoreCalculation(); 
 
     for (const race of races) {
       try {

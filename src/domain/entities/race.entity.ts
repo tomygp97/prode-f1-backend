@@ -14,6 +14,7 @@ export class Race {
         public readonly meetingKey: number,
         public readonly raceSessionKey: number | null,
         public readonly qualifyingSessionKey: number | null,
+        public readonly scoresCalculatedAt: Date | null,
     ) {}
 
     static create(props: {
@@ -29,6 +30,7 @@ export class Race {
         meetingKey: number,
         raceSessionKey: number | null,
         qualifyingSessionKey: number | null,
+        scoresCalculatedAt?: Date | null,
     }): Race {
         return new Race(
             props.id,
@@ -43,6 +45,7 @@ export class Race {
             props.meetingKey,
             props.raceSessionKey,
             props.qualifyingSessionKey,
+            props.scoresCalculatedAt ?? null, 
         );
     }
 
@@ -52,5 +55,9 @@ export class Race {
 
     isFinished(): boolean {
         return this.status === RaceStatus.FINISHED;
+    }
+
+    hasScoresCalculated(): boolean {
+        return this.scoresCalculatedAt !== null;
     }
 }
