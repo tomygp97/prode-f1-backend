@@ -10,6 +10,7 @@ import { Prediction } from '../../../domain/entities/prediction.entity';
 import { PredictionScore, PredictionScoreBreakdown } from '../../../domain/entities/prediction-score.entity';
 import { LeagueRanking } from '../../../domain/entities/league-ranking.entity';
 import { RaceResult } from '../../../domain/entities/race-result.entity';
+import { RaceRepository } from '../../../domain/ports/race.repository';
 
 const POINTS = {
   WINNER_EXACT: 25,
@@ -32,6 +33,7 @@ export class CalculateRaceScoresUseCase {
     private readonly scoreRepo: PredictionScoreRepository,
     private readonly rankingRepo: LeagueRankingRepository,
     private readonly leagueRepo: LeagueRepository,
+    private readonly raceRepo: RaceRepository,
     private readonly raceResultRepo: RaceResultRepository,
     private readonly driverResultRepo: RaceDriverResultRepository,
   ) {}
@@ -84,6 +86,8 @@ export class CalculateRaceScoresUseCase {
     }
 
     this.logger.log(`Calculated scores for ${predictions.length} predictions in race ${raceId}`);
+
+    await this.raceRepo.markScoresCalculated(raceId);
   }
 
   private calculateBreakdown(

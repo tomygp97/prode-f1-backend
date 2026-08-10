@@ -58,6 +58,23 @@ export class RacePrismaRepository implements RaceRepository {
         return races.map(race => RaceMapper.toDomain(race));
     };
 
+    async findRacesPendingScoreCalculation(): Promise<Race[]> {
+        const races = await this.prisma.race.findMany({
+            where: {
+            status: PrismaRaceStatus.RESULTS_SYNCED,
+            scoresCalculatedAt: null,
+            },
+        });
+        return races.map(RaceMapper.toDomain);
+    }
+
+    async markScoresCalculated(raceId: string): Promise<void> {
+        await this.prisma.race.update({
+            where: { id: raceId },
+            data: { scoresCalculatedAt: new Date() },
+        });
+    }
+
     async findNext() {
         const race = await this.prisma.race.findFirst({
             where: {

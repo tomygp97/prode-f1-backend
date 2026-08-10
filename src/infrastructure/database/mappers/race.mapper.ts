@@ -17,6 +17,7 @@ export class RaceMapper {
             meetingKey: prismaRace.meetingKey,
             raceSessionKey: prismaRace.raceSessionKey,
             qualifyingSessionKey: prismaRace.qualifyingSessionKey,
+            scoresCalculatedAt: prismaRace.scoresCalculatedAt,
         });
     };
 

@@ -9,7 +9,9 @@ const mockRaceRepo: jest.Mocked<RaceRepository> = {
     findAll: jest.fn(),
     findById: jest.fn(),
     findByStatus: jest.fn(),
-    findRacesPendingResultsSync: jest.fn(), 
+    findRacesPendingResultsSync: jest.fn(),
+    findRacesPendingScoreCalculation: jest.fn(),
+    markScoresCalculated: jest.fn(),
     findNext: jest.fn(),
     findScheduledBeforeDate: jest.fn(),
     findLockedRacesWithPastStartTime: jest.fn(),
@@ -34,31 +36,31 @@ describe('CalculateAllPendingScoresUseCase', () => {
         jest.clearAllMocks();
     });
 
-    it('should call CalculateRaceScoresUseCase for each race with synced results', async () => {
-        mockRaceRepo.findByStatus.mockResolvedValue([race('race-1'), race('race-2')]);
+    it('should call CalculateRaceScoresUseCase for each race pending score calculation', async () => {
+        mockRaceRepo.findRacesPendingScoreCalculation.mockResolvedValue([race('race-1'), race('race-2')]);
         mockCalculateRaceScores.execute.mockResolvedValue();
 
         await useCase.execute();
 
-        expect(mockRaceRepo.findByStatus).toHaveBeenCalledWith(RaceStatus.RESULTS_SYNCED);
+        expect(mockRaceRepo.findRacesPendingScoreCalculation).toHaveBeenCalledTimes(1);
         expect(mockCalculateRaceScores.execute).toHaveBeenCalledTimes(2);
         expect(mockCalculateRaceScores.execute).toHaveBeenCalledWith('race-1');
         expect(mockCalculateRaceScores.execute).toHaveBeenCalledWith('race-2');
     });
 
     it('should continue processing remaining races if one fails', async () => {
-        mockRaceRepo.findByStatus.mockResolvedValue([race('race-1'), race('race-2')]);
+        mockRaceRepo.findRacesPendingScoreCalculation.mockResolvedValue([race('race-1'), race('race-2')]);
         mockCalculateRaceScores.execute
             .mockRejectedValueOnce(new Error('something went wrong'))
             .mockResolvedValueOnce();
 
-        await useCase.execute(); // no debe tirar excepción hacia afuera
+        await useCase.execute();
 
         expect(mockCalculateRaceScores.execute).toHaveBeenCalledTimes(2);
     });
 
     it('should do nothing if there are no races pending', async () => {
-        mockRaceRepo.findByStatus.mockResolvedValue([]);
+        mockRaceRepo.findRacesPendingScoreCalculation.mockResolvedValue([]);
 
         await useCase.execute();
 

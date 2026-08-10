@@ -135,6 +135,7 @@ model Race {
   qualifyingStartAt     DateTime?   @map("qualifying_start_at")
   raceStartAt           DateTime?   @map("race_start_at")
   status                RaceStatus  @default(SCHEDULED)
+  scoresCalculatedAt    DateTime?   @map("scores_calculated_at")
 
   // OpenF1 identifiers
   meetingKey            Int         @unique @map("meeting_key")
