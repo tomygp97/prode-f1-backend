@@ -3,7 +3,7 @@ import { Driver } from "../../../domain/entities/driver.entity";
 import { DriverRepository } from "../../../domain/ports/driver.repository";
 
 @Injectable()
-export class GetDriverById {
+export class GetDriverByIdUseCase {
     constructor(private readonly dirverRepository: DriverRepository) {}
 
     async execute(id: string): Promise<Driver | null> {

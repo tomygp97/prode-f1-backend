@@ -1,6 +1,6 @@
 import { Driver } from "../../../domain/entities/driver.entity";
 import { DriverRepository } from "../../../domain/ports/driver.repository";
-import { GetDriverById } from "./get-driver-by-id.use-case";
+import { GetDriverByIdUseCase } from "./get-driver-by-id.use-case";
 
 const mockDriverRepository: jest.Mocked<DriverRepository> = {
     upsert: jest.fn(),
@@ -19,10 +19,10 @@ const fakeDriver = Driver.create({
 });
   
 describe('GetDriverById', () => {
-let useCase: GetDriverById;
+let useCase: GetDriverByIdUseCase;
 
 beforeEach(() => {
-    useCase = new GetDriverById(mockDriverRepository);
+    useCase = new GetDriverByIdUseCase(mockDriverRepository);
     jest.clearAllMocks();
 });
 
