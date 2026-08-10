@@ -5,6 +5,7 @@ export class Prediction {
     public readonly leagueId: string,
     public readonly raceId: string,
     public readonly predictedOrder: string[],
+    public readonly predictedPoleDriverId: string, 
     public readonly trackedDriverPosition: number | null,
     public readonly safetyCar: boolean,
     public readonly dnfCount: number,
@@ -16,6 +17,7 @@ export class Prediction {
     leagueId: string;
     raceId: string;
     predictedOrder: string[];
+    predictedPoleDriverId: string;
     trackedDriverPosition?: number | null;
     safetyCar: boolean;
     dnfCount: number;
@@ -40,6 +42,7 @@ export class Prediction {
       props.leagueId,
       props.raceId,
       props.predictedOrder,
+      props.predictedPoleDriverId,
       props.trackedDriverPosition ?? null,
       props.safetyCar,
       props.dnfCount,

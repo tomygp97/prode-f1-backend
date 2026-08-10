@@ -2,6 +2,7 @@ export interface PredictionScoreBreakdown {
   positions: number;      
   safetyCar: number;
   dnfCount: number;
+  pole: number;
   trackedDriver: number;
 }
 
@@ -24,6 +25,7 @@ export class PredictionScore {
       props.pointsBreakdown.positions +
       props.pointsBreakdown.safetyCar +
       props.pointsBreakdown.dnfCount +
+      props.pointsBreakdown.pole +  
       props.pointsBreakdown.trackedDriver;
 
     if (totalPoints < 0) {

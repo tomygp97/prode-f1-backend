@@ -20,6 +20,7 @@ const POINTS = {
   DNF_OFF_BY_ONE: 5,
   TRACKED_DRIVER_EXACT: 10,
   TRACKED_DRIVER_OFF_BY_ONE: 5,
+  POLE_EXACT: 20,
 };
 
 @Injectable()
@@ -118,6 +119,8 @@ export class CalculateRaceScoresUseCase {
       dnfCount = POINTS.DNF_OFF_BY_ONE;
     }
 
+    const pole = prediction.predictedPoleDriverId === raceResult.poleDriverId ? POINTS.POLE_EXACT : 0; 
+
     let trackedDriver = 0;
     if (prediction.trackedDriverPosition != null && trackedDriverActualPosition !== undefined) {
       const diff = Math.abs(trackedDriverActualPosition - prediction.trackedDriverPosition);
@@ -125,6 +128,6 @@ export class CalculateRaceScoresUseCase {
       else if (diff === 1) trackedDriver = POINTS.TRACKED_DRIVER_OFF_BY_ONE;
     }
 
-    return { positions, safetyCar, dnfCount, trackedDriver };
+    return { positions, safetyCar, dnfCount, pole, trackedDriver };
   }
 }
