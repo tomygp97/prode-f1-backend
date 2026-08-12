@@ -9,8 +9,11 @@ import { GetRaceResultsUseCase } from "./get-race-results.use-case";
 
 const mockRaceRepository: jest.Mocked<RaceRepository> = {
     upsertFromMeeting: jest.fn(),
-    findById: jest.fn(),
     findAll: jest.fn(),
+    findById: jest.fn(),
+    findByStatus: jest.fn(),
+    findRacesPendingScoreCalculation: jest.fn(),
+    markScoresCalculated: jest.fn(),
     findNext: jest.fn(),
     findScheduledBeforeDate: jest.fn(),
     findLockedRacesWithPastStartTime: jest.fn(),

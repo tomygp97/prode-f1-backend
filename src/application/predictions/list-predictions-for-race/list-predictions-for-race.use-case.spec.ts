@@ -25,7 +25,8 @@ const mockRaceRepo: jest.Mocked<RaceRepository> = {
     findAll: jest.fn(),
     findById: jest.fn(),
     findByStatus: jest.fn(),
-    findRacesPendingResultsSync: jest.fn(),
+    findRacesPendingScoreCalculation: jest.fn(),
+    markScoresCalculated: jest.fn(),
     findNext: jest.fn(),
     findScheduledBeforeDate: jest.fn(),
     findLockedRacesWithPastStartTime: jest.fn(),
@@ -53,8 +54,18 @@ describe('ListPredictionsForRaceUseCase', () => {
         );
         mockRaceRepo.findById.mockResolvedValue(race(RaceStatus.FINISHED));
         mockPredictionRepo.findAllByLeagueAndRace.mockResolvedValue([
-            Prediction.create({ id: 'p1', userId: 'user-1', leagueId: 'league-1', raceId: 'race-1', predictedOrder: ['d1', 'd2', 'd3'], safetyCar: true, dnfCount: 0 }),
+            Prediction.create({
+                id: 'p1',
+                userId: 'user-1',
+                leagueId: 'league-1',
+                raceId: 'race-1',
+                predictedOrder: ['d1', 'd2', 'd3'],
+                predictedPoleDriverId: 'd1',
+                safetyCar: true,
+                dnfCount: 0,
+            }),
         ]);
+
 
         const result = await useCase.execute({ leagueId: 'league-1', raceId: 'race-1', requesterId: 'user-1' });
 
