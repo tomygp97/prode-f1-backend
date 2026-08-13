@@ -1,3 +1,5 @@
+import { Driver } from "../entities/driver.entity";
+
 export interface DriverRepositoryResult {
     id: string;
     driverNumber: number;
@@ -17,4 +19,8 @@ export abstract class DriverRepository {
         seasonId: string,
         driverNumbers: number[],
     ): Promise<DriverRepositoryResult[]>;
+
+    abstract findAll(): Promise<Driver[]>;
+
+    abstract findById(id: string): Promise<Driver | null>;
 }

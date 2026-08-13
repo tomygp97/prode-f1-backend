@@ -44,14 +44,14 @@ export class LeagueController {
     return this.joinLeague.execute({ inviteCode: dto.inviteCode, userId: user.userId });
   }
 
-  @Post(':leagueId/leave')
-  leave(@Param('leagueId') leagueId: string, @CurrentUser() user: { userId: string }) {
-    return this.leaveLeague.execute({ leagueId, userId: user.userId });
-  }
-
   @Get('public')
   listPublic() {
     return this.listPublicLeagues.execute();
+  }
+
+  @Post(':leagueId/leave')
+  leave(@Param('leagueId') leagueId: string, @CurrentUser() user: { userId: string }) {
+    return this.leaveLeague.execute({ leagueId, userId: user.userId });
   }
 
   @Get(':leagueId/members')

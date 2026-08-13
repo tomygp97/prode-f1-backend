@@ -26,14 +26,14 @@ export class RaceController {
     async getNextRace() {
         return this.getNextRaceUseCase.execute();
     }
-
+    
     @Get(':id')
     async getRaceById(
         @Param('id') id: string
     ) {
         return this.getRaceByIdUseCase.execute(id);
     }
-
+    
     @Get(':id/results')
     async getRaceResults(
         @Param('id') id: string

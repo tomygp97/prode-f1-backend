@@ -11,14 +11,17 @@ const mockOfficialResultsProvider: jest.Mocked<OfficialResultsProvider> = {
 }
 
 const mockRaceRepository: jest.Mocked<RaceRepository> = {
-    upsertFromMeeting: jest.fn(),
-    findById: jest.fn(),
-    findAll: jest.fn(),
-    findNext: jest.fn(),
-    findScheduledBeforeDate: jest.fn(),
-    findLockedRacesWithPastStartTime: jest.fn(),
-    findRacesPendingResultsSync: jest.fn(),
-    updateStatus: jest.fn(),
+  upsertFromMeeting: jest.fn(),
+  findAll: jest.fn(),
+  findById: jest.fn(),
+  findByStatus: jest.fn(),
+  findRacesPendingScoreCalculation: jest.fn(),
+  markScoresCalculated: jest.fn(),
+  findNext: jest.fn(),
+  findScheduledBeforeDate: jest.fn(),
+  findLockedRacesWithPastStartTime: jest.fn(),
+  findRacesPendingResultsSync: jest.fn(),
+  updateStatus: jest.fn(),
 }
 
 const fakeMeetings: RaceMeetingData[] = [
