@@ -15,6 +15,8 @@ import { GetLeaguePrizesUseCase } from '../../application/leagues/get-league-pri
 import { TransferLeagueOwnershipUseCase } from '../../application/leagues/transfer-league-ownership/transfer-league-ownership.use-case';
 import { SetLeaguePredictionSlotsUseCase } from '../../application/leagues/set-league-prediction-slots/set-league-prediction-slots.use-case';
 import { JoinPublicLeagueUseCase } from '../../application/leagues/join-public-league/join-public-league.use-case';
+import { ListUserLeaguesUseCase } from '../../application/leagues/list-user-leagues/list-user-leagues.use-case';
+import { GetLeagueByIdUseCase } from '../../application/leagues/get-league-by-id/get-league-by-id.use-case';
 
 
 // Puertos (ahora clases abstractas, necesitamos importarlas como valores reales)
@@ -41,8 +43,10 @@ import { NanoIdInviteCodeGenerator } from '../services/invite-code.generator';
     LeaveLeagueUseCase,
     ListPublicLeaguesUseCase,
     ListLeagueMembersUseCase,
+    ListUserLeaguesUseCase,
     SetLeaguePrizesUseCase,
     GetLeaguePrizesUseCase,
+    GetLeagueByIdUseCase,
     TransferLeagueOwnershipUseCase,
     SetLeaguePredictionSlotsUseCase,
     JoinPublicLeagueUseCase,

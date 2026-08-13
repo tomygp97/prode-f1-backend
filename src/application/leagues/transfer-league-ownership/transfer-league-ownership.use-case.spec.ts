@@ -17,6 +17,7 @@ const mockMemberRepository: jest.Mocked<LeagueMemberRepository> = {
     save: jest.fn(),
     findByLeagueAndUser: jest.fn(),
     findActiveMembersByLeague: jest.fn(),
+    findActiveLeaguesByUser: jest.fn(),
 };
 
 describe('TransferLeagueOwnershipUseCase', () => {

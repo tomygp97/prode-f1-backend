@@ -18,6 +18,7 @@ const mockMemberRepo: jest.Mocked<LeagueMemberRepository> = {
     save: jest.fn(),
     findByLeagueAndUser: jest.fn(),
     findActiveMembersByLeague: jest.fn(),
+    findActiveLeaguesByUser: jest.fn(),
 };
 
 const mockRaceRepo: jest.Mocked<RaceRepository> = {

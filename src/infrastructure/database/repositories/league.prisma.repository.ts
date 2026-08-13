@@ -5,6 +5,7 @@ import { LeagueMember } from '../../../domain/entities/league-member.entity';
 import { LeagueRepository, PublicLeagueWithMemberCount } from '../../../domain/ports/league.repository';
 import { LeagueMapper } from '../mappers/league.mapper';
 import { LeagueMemberMapper } from '../mappers/league-member.mapper';
+import { toLeagueView } from '../../../domain/views/league.view';
 
 @Injectable()
 export class LeaguePrismaRepository implements LeagueRepository {
@@ -42,7 +43,7 @@ export class LeaguePrismaRepository implements LeagueRepository {
     });
 
   return raws.map((raw) => ({
-    league: LeagueMapper.toDomain(raw),
+    league: toLeagueView(LeagueMapper.toDomain(raw)),
     memberCount: raw._count.members,
   }));
 }
