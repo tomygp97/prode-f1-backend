@@ -13,10 +13,14 @@ const mockOfficialResultsProvider: jest.Mocked<OfficialResultsProvider> = {
 const mockTeamRepository: jest.Mocked<TeamRepository> = {
     upsert: jest.fn(),
     findByName: jest.fn(),
+    findAll: jest.fn(),
 }
 const mockDriverRepository: jest.Mocked<DriverRepository> = {
     upsert: jest.fn(),
     findByDriverNumbers: jest.fn(),
+    findAll: jest.fn(),
+    findById: jest.fn(),
+
 }
 
 describe('SyncDriversUseCase', () => {
