@@ -16,6 +16,8 @@ import { TransferLeagueOwnershipUseCase } from '../../../application/leagues/tra
 import { SetLeaguePredictionSlotsDto } from '../dtos/set-league-prediction-slots.dto';
 import { SetLeaguePredictionSlotsUseCase } from '../../../application/leagues/set-league-prediction-slots/set-league-prediction-slots.use-case';
 import { JoinPublicLeagueUseCase } from '../../../application/leagues/join-public-league/join-public-league.use-case';
+import { ListUserLeaguesUseCase } from '../../../application/leagues/list-user-leagues/list-user-leagues.use-case';
+import { GetLeagueByIdUseCase } from '../../../application/leagues/get-league-by-id/get-league-by-id.use-case';
 
 
 @Controller('leagues')
@@ -25,8 +27,10 @@ export class LeagueController {
     private readonly createLeague: CreateLeagueUseCase,
     private readonly joinLeague: JoinLeagueUseCase,
     private readonly leaveLeague: LeaveLeagueUseCase,
+    private readonly getLeagueById: GetLeagueByIdUseCase,
     private readonly listPublicLeagues: ListPublicLeaguesUseCase,
     private readonly listLeagueMembers: ListLeagueMembersUseCase,
+    private readonly listUserLeagues: ListUserLeaguesUseCase,
     private readonly setLeaguePrizes: SetLeaguePrizesUseCase,
     private readonly getLeaguePrizes: GetLeaguePrizesUseCase,
     private readonly transferOwnershipUseCase: TransferLeagueOwnershipUseCase,
@@ -47,6 +51,19 @@ export class LeagueController {
   @Get('public')
   listPublic() {
     return this.listPublicLeagues.execute();
+  }
+
+  @Get('me')
+  listMine(@CurrentUser() user: { userId: string }) {
+    return this.listUserLeagues.execute({ userId: user.userId });
+  }
+
+  @Get(':leagueId')
+  getById(
+    @Param('leagueId') leagueId: string,
+    @CurrentUser() user: { userId: string },
+  ) {
+    return this.getLeagueById.execute({ leagueId, requesterId: user.userId });
   }
 
   @Post(':leagueId/leave')

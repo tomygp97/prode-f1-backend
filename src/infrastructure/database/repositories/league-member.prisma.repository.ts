@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { LeagueMember } from '../../../domain/entities/league-member.entity';
-import { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
+import { LeagueMemberRepository, UserLeagueMembership } from '../../../domain/ports/league-member.repository';
 import { LeagueMemberMapper } from '../mappers/league-member.mapper';
+import { LeagueMapper } from '../mappers/league.mapper';
+import { toLeagueView } from '../../../domain/views/league.view';
 
 @Injectable()
 export class LeagueMemberPrismaRepository implements LeagueMemberRepository {
@@ -29,5 +31,34 @@ export class LeagueMemberPrismaRepository implements LeagueMemberRepository {
       where: { leagueId, leftAt: null },
     });
     return raws.map(LeagueMemberMapper.toDomain);
+  }
+
+  async findActiveLeaguesByUser(userId: string): Promise<UserLeagueMembership[]> {
+    const raws = await this.prisma.leagueMember.findMany({
+      where: {
+        userId,
+        leftAt: null,
+        league: { deletedAt: null },
+      },
+      include: {
+        league: {
+          include: {
+            _count: {
+              select: {
+                members: { where: { leftAt: null } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return raws.map((raw) => ({
+      league: toLeagueView(LeagueMapper.toDomain(raw.league)),
+      role: raw.role as 'admin' | 'member',
+      joinedAt: raw.joinedAt,
+      membersCount: raw.league._count.members,
+      inviteCode: raw.league.inviteCode,
+    }));
   }
 }

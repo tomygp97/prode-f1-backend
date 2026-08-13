@@ -1,9 +1,17 @@
 import { League } from '../entities/league.entity';
 import { LeagueMember } from '../entities/league-member.entity';
+import { LeagueView } from '../views/league.view';
 
 export interface PublicLeagueWithMemberCount {
-  league: League;
+  league: LeagueView;
   memberCount: number;
+}
+
+export interface LeagueDetail {
+  league: LeagueView;
+  role: 'admin' | 'member' | null;
+  membersCount: number;
+  inviteCode: string | null;
 }
 
 export abstract class LeagueRepository {
