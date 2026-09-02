@@ -2,20 +2,7 @@ import { RaceRepository } from "../../../domain/ports/race.repository";
 import { Race } from "../../../domain/entities/race.entity";
 import { RaceStatus } from "../../../domain/enums/race-status.enum";
 import { GetNextRaceUseCase } from "./get-next-race.use-case";
-
-const mockRaceRepository: jest.Mocked<RaceRepository> = {
-    upsertFromMeeting: jest.fn(),
-    findAll: jest.fn(),
-    findById: jest.fn(),
-    findByStatus: jest.fn(),
-    findRacesPendingScoreCalculation: jest.fn(),
-    markScoresCalculated: jest.fn(),
-    findNext: jest.fn(),
-    findScheduledBeforeDate: jest.fn(),
-    findLockedRacesWithPastStartTime: jest.fn(),
-    findRacesPendingResultsSync: jest.fn(),
-    updateStatus: jest.fn(),
-};
+import { mockRaceRepository } from "../../../../test/mocks/race-repository.mock";
 
 const fakeRace1 = Race.create({
     id: 'race-1',
