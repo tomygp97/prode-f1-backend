@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RaceRepository } from '../../../domain/ports/race.repository';
-import { RaceStatus } from '../../../domain/enums/race-status.enum';
 import { CalculateRaceScoresUseCase } from '../calculate-race-scores/calculate-race-scores.use-case';
 
 @Injectable()

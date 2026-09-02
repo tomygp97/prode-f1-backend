@@ -87,6 +87,19 @@ export class RacePrismaRepository implements RaceRepository {
         return race ? RaceMapper.toDomain(race) : null;
     };
 
+    async findLastResultsSynced(): Promise<Race | null> {
+        const race = await this.prisma.race.findFirst({
+          where: {
+            status: PrismaRaceStatus.RESULTS_SYNCED,
+          },
+          orderBy: {
+            raceStartAt: "desc",
+          },
+        })
+      
+        return race ? RaceMapper.toDomain(race) : null
+      }
+
     async findScheduledBeforeDate(date: Date) {
         const races = await this.prisma.race.findMany({
             where: {

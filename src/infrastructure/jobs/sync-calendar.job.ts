@@ -18,10 +18,15 @@ export class SyncCalendarJob {
         const seasonId = 'c280d7b8-7a5e-11f1-883d-563f2351353a';
         const meetings = await this.syncCalendarUseCase.execute(2026, seasonId);
 
-        const latestMeeting = meetings.at(-1);
+        const now = new Date();
+        const nextMeeting = meetings.find(
+            (m) => m.raceStartAt !== null && m.raceStartAt > now,
+        );
 
-        if (latestMeeting?.latestSessionKey) {
-            await this.syncDriversUsecase.execute(latestMeeting.latestSessionKey, seasonId);
+        if (nextMeeting?.latestSessionKey) {
+            await this.syncDriversUsecase.execute(nextMeeting.latestSessionKey, seasonId);
+        } else {
+            this.logger.warn('No upcoming race with a session key available yet to sync drivers');
         }
     }
 }

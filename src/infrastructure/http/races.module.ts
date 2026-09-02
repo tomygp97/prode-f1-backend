@@ -26,6 +26,7 @@ import { RaceController } from './controllers/race.controller';
 import { GetRacesUseCase } from '../../application/races/get-races/get-races.use-case';
 import { GetRaceByIdUseCase } from '../../application/races/get-race/get-race-by-id.use-case';
 import { GetNextRaceUseCase } from '../../application/races/get-next-race/get-next-race.use-case';
+import { GetLastResultsSyncedRaceUseCase } from '../../application/races/get-last-results-synced-race/get-last-results-synced-race.use-case';
 import { GetRaceResultsUseCase } from '../../application/races/get-race-results/get-race-results.use-case';
 import { CalculateAllPendingScoresUseCase } from '../../application/ranking/calculate-all-pending-scores/calculate-all-pending-scores.use-case';
 import { CalculateRaceScoresUseCase } from '../../application/ranking/calculate-race-scores/calculate-race-scores.use-case';
@@ -56,6 +57,7 @@ import { LeaguePrismaRepository } from '../database/repositories/league.prisma.r
       GetRacesUseCase,
       GetRaceByIdUseCase,
       GetNextRaceUseCase,
+      GetLastResultsSyncedRaceUseCase,
       GetRaceResultsUseCase,
       CalculateAllPendingScoresUseCase,
       CalculateRaceScoresUseCase,

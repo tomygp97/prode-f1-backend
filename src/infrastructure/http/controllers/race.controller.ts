@@ -6,6 +6,7 @@ import { GetRaceResultsUseCase } from "../../../application/races/get-race-resul
 import { RaceDto } from "../dtos/race.dto";
 import { RaceResultDto } from "../dtos/race-result.dto";
 import { RaceDriverResultDto } from "../dtos/race-driver-result.dto";
+import { GetLastResultsSyncedRaceUseCase } from "../../../application/races/get-last-results-synced-race/get-last-results-synced-race.use-case";
 
 
 @Controller('races')
@@ -15,6 +16,7 @@ export class RaceController {
         private readonly getRaceByIdUseCase: GetRaceByIdUseCase,
         private readonly getNextRaceUseCase: GetNextRaceUseCase,
         private readonly getRaceResultsUseCase: GetRaceResultsUseCase,
+        private readonly getLastResultsSyncedRaceUseCase: GetLastResultsSyncedRaceUseCase
     ) {}
 
     @Get()
@@ -26,7 +28,12 @@ export class RaceController {
     async getNextRace() {
         return this.getNextRaceUseCase.execute();
     }
-    
+
+    @Get("last-results-synced")
+        async getLastResultsSyncedRace() {
+        return this.getLastResultsSyncedRaceUseCase.execute()
+    }
+        
     @Get(':id')
     async getRaceById(
         @Param('id') id: string

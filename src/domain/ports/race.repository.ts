@@ -10,6 +10,7 @@ export abstract class RaceRepository {
   abstract findRacesPendingScoreCalculation(): Promise<Race[]>;
   abstract markScoresCalculated(raceId: string): Promise<void>;
   abstract findNext(): Promise<Race | null>;
+  abstract findLastResultsSynced(): Promise<Race | null>
   abstract findScheduledBeforeDate(date: Date): Promise<Race[]>;
   abstract findLockedRacesWithPastStartTime(date: Date): Promise<Race[]>;
   abstract findRacesPendingResultsSync(): Promise<Race[]>;

@@ -3,6 +3,7 @@ import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { SubmitPredictionDto } from '../dtos/submit-prediction.dto';
 import { SubmitPredictionUseCase } from '../../../application/predictions/submit-prediction/submit-prediction.use-case';
+import { GetUserPredictionScoreUseCase } from '../../../application/predictions/get-user-prediction-score/get-user-prediction-score.use-case';
 import { GetUserPredictionUseCase } from '../../../application/predictions/get-user-prediction/get-user-prediction.use-case';
 import { ListPredictionsForRaceUseCase } from '../../../application/predictions/list-predictions-for-race/list-predictions-for-race.use-case';
 
@@ -12,6 +13,7 @@ export class PredictionController {
   constructor(
     private readonly submitPrediction: SubmitPredictionUseCase,
     private readonly getUserPrediction: GetUserPredictionUseCase,
+    private readonly getUserPredictionScore: GetUserPredictionScoreUseCase,
     private readonly listPredictionsForRace: ListPredictionsForRaceUseCase,
   ) {}
 
@@ -41,6 +43,19 @@ export class PredictionController {
     @CurrentUser() user: { userId: string },
   ) {
     return this.getUserPrediction.execute({ leagueId, raceId, userId: user.userId });
+  }
+
+  @Get('score')
+  getMyScore(
+    @Param('leagueId') leagueId: string,
+    @Param('raceId') raceId: string,
+    @CurrentUser() user: { userId: string },
+  ) {
+    return this.getUserPredictionScore.execute({
+      leagueId,
+      raceId,
+      userId: user.userId,
+    })
   }
 
   @Get()

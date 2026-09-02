@@ -5,10 +5,10 @@ export class SubmitPredictionDto {
   @ArrayMinSize(3)
   @ArrayMaxSize(22)
   @IsUUID('4', { each: true })
-  predictedOrder: string[];
+  predictedOrder!: string[];
 
   @IsUUID()
-  predictedPoleDriverId: string;
+  predictedPoleDriverId!: string;
 
   @IsOptional()
   @IsInt()
@@ -16,9 +16,9 @@ export class SubmitPredictionDto {
   trackedDriverPosition?: number;
 
   @IsBoolean()
-  safetyCar: boolean;
+  safetyCar!: boolean;
 
   @IsInt()
   @Min(0)
-  dnfCount: number;
+  dnfCount!: number;
 }
