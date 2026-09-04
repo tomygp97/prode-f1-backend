@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PredictionScore } from '../../../domain/entities/prediction-score.entity';
 import { PredictionScoreRepository } from '../../../domain/ports/prediction-score.repository';
 import { PredictionScoreMapper } from '../mappers/prediction-score.mapper';
+import { LeagueRaceScoreEntry } from '../../../domain/ports/prediction-score.repository';
 
 @Injectable()
 export class PredictionScorePrismaRepository implements PredictionScoreRepository {
@@ -22,5 +23,30 @@ export class PredictionScorePrismaRepository implements PredictionScoreRepositor
       where: { predictionId },
     });
     return raw ? PredictionScoreMapper.toDomain(raw) : null;
+  }
+
+  async findAllByLeague(leagueId: string): Promise<LeagueRaceScoreEntry[]> {
+     const rows = await this.prisma.predictionScore.findMany({
+      where: {
+        prediction: { leagueId },
+      },
+      select: {
+        totalPoints: true,
+        prediction: {
+          select: {
+            userId: true,
+            raceId: true,
+            race: { select: { round: true } },
+          },
+        },
+      },
+    });
+
+    return rows.map((row) => ({
+      userId: row.prediction.userId,
+      raceId: row.prediction.raceId,
+      round: row.prediction.race.round,
+      totalPoints: row.totalPoints,
+    }));
   }
 }

@@ -24,5 +24,6 @@ import { LoginUserUseCase } from '../../application/auth/login-user.use-case';
       useClass: UserPrismaRepository,
     },
   ],
+  exports: [UserRepository],
 })
 export class AuthModule {}

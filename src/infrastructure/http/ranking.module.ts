@@ -4,6 +4,7 @@ import { SharedAuthModule } from './shared-auth/shared-auth.module';
 import { LeaguesModule } from './leagues.module';
 import { RacesModule } from './races.module';
 import { PredictionsModule } from './predictions.module';
+import { AuthModule } from './auth.module'
 
 import { RankingController } from './controllers/ranking.controller';
 
@@ -19,7 +20,7 @@ import { PredictionScorePrismaRepository } from '../database/repositories/predic
 import { CalculateScoresJob } from '../jobs/calculate-scores.job';
 
 @Module({
-  imports: [DatabaseModule, SharedAuthModule, LeaguesModule, RacesModule, PredictionsModule],
+  imports: [DatabaseModule, SharedAuthModule, LeaguesModule, RacesModule, PredictionsModule, AuthModule],
   controllers: [RankingController],
   providers: [
     CalculateRaceScoresUseCase,
