@@ -6,6 +6,7 @@ const mockPredictionRepo: jest.Mocked<PredictionRepository> = {
     save: jest.fn(),
     findByLeagueRaceAndUser: jest.fn(),
     findAllByLeagueAndRace: jest.fn(),
+    findAllByRaceId: jest.fn(),
 };
 
 describe('GetUserPredictionUseCase', () => {
@@ -20,7 +21,7 @@ describe('GetUserPredictionUseCase', () => {
         mockPredictionRepo.findByLeagueRaceAndUser.mockResolvedValue(
             Prediction.create({
                 id: 'prediction-1', userId: 'user-1', leagueId: 'league-1', raceId: 'race-1',
-                predictedOrder: ['d1', 'd2', 'd3'], safetyCar: true, dnfCount: 1,
+                predictedOrder: ['d1', 'd2', 'd3'], predictedPoleDriverId: 'd1', safetyCar: true, dnfCount: 1,
             })
         );
 
