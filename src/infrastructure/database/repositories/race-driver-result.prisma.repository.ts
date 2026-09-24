@@ -33,7 +33,8 @@ export class RaceDriverResultPrismaRepository implements RaceDriverResultReposit
     async findByRaceId(raceId: string): Promise<RaceDriverResult[]> {
         const results = await this.prisma.raceDriverResult.findMany({
             where: { raceId },
-            orderBy: { position: 'asc' },
+            // en MySQL los NULL van primero con asc: los pilotos sin posición quedan al final
+            orderBy: { position: { sort: 'asc', nulls: 'last' } },
         });
 
         return results.map(

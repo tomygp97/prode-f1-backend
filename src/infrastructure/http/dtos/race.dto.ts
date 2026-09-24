@@ -14,6 +14,7 @@ export class RaceDto {
     meetingKey!: number;
     raceSessionKey!: number | null;
     qualifyingSessionKey!: number | null;
+    scoresCalculatedAt!: Date | null;
 
     static fromDomain(race: Race): RaceDto {
         return {
@@ -29,6 +30,7 @@ export class RaceDto {
             meetingKey: race.meetingKey,
             raceSessionKey: race.raceSessionKey,
             qualifyingSessionKey: race.qualifyingSessionKey,
+            scoresCalculatedAt: race.scoresCalculatedAt,
         };
     }
 }

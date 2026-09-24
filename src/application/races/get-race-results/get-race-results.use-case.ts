@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { Race } from "../../../domain/entities/race.entity";
 import { RaceDriverResult } from "../../../domain/entities/race-driver-result.entity";
 import { RaceResult } from "../../../domain/entities/race-result.entity";
@@ -23,7 +23,7 @@ export class GetRaceResultsUseCase {
     async execute(id: string): Promise<GetRaceResultsResponse> {
         const race = await this.raceRepository.findById(id);
         if (!race) {
-            throw new Error('Race not found');
+            throw new NotFoundException('Race not found');
         };
 
         const raceResult = await this.raceResultRepository.findByRaceId(id);

@@ -1,3 +1,4 @@
+import { NotFoundException } from "@nestjs/common";
 import { RaceDriverResult } from "../../../domain/entities/race-driver-result.entity";
 import { RaceResult } from "../../../domain/entities/race-result.entity";
 import { Race } from "../../../domain/entities/race.entity";
@@ -15,6 +16,7 @@ const mockRaceRepository: jest.Mocked<RaceRepository> = {
     findRacesPendingScoreCalculation: jest.fn(),
     markScoresCalculated: jest.fn(),
     findNext: jest.fn(),
+    findLastResultsSynced: jest.fn(),
     findScheduledBeforeDate: jest.fn(),
     findLockedRacesWithPastStartTime: jest.fn(),
     findRacesPendingResultsSync: jest.fn(),
@@ -136,13 +138,13 @@ describe('GetRaceResultsUseCase', () => {
         });
     });
 
-    it('should throw error if race does not exist', async () => {
+    it('should throw NotFoundException if race does not exist', async () => {
         mockRaceRepository.findById.mockResolvedValue(null);
 
 
         await expect(
             useCase.execute('invalid-id')
-        ).rejects.toThrow('Race not found');
+        ).rejects.toThrow(new NotFoundException('Race not found'));
 
 
         expect(mockRaceResultRepository.findByRaceId)

@@ -40,6 +40,7 @@ const mockRaceRepo: jest.Mocked<RaceRepository> = {
     findRacesPendingScoreCalculation: jest.fn(),
     markScoresCalculated: jest.fn(),
     findNext: jest.fn(),
+    findLastResultsSynced: jest.fn(),
     findScheduledBeforeDate: jest.fn(),
     findLockedRacesWithPastStartTime: jest.fn(),
     findRacesPendingResultsSync: jest.fn(),
@@ -77,7 +78,7 @@ describe('SubmitPredictionUseCase', () => {
 
         const result = await useCase.execute({
             leagueId: 'league-1', raceId: 'race-1', userId: 'user-1',
-            predictedOrder: ['d1', 'd2', 'd3'], safetyCar: true, dnfCount: 2,
+            predictedOrder: ['d1', 'd2', 'd3'], predictedPoleDriverId: 'd1', safetyCar: true, dnfCount: 2,
         });
 
         expect(result.predictedOrder).toEqual(['d1', 'd2', 'd3']);
@@ -91,13 +92,13 @@ describe('SubmitPredictionUseCase', () => {
         mockPredictionRepo.findByLeagueRaceAndUser.mockResolvedValue(
             Prediction.create({
                 id: 'prediction-1', userId: 'user-1', leagueId: 'league-1', raceId: 'race-1',
-                predictedOrder: ['old1', 'old2', 'old3'], safetyCar: false, dnfCount: 0,
+                predictedOrder: ['old1', 'old2', 'old3'], predictedPoleDriverId: 'd1', safetyCar: false, dnfCount: 0,
             })
         );
 
         const result = await useCase.execute({
             leagueId: 'league-1', raceId: 'race-1', userId: 'user-1',
-            predictedOrder: ['d1', 'd2', 'd3'], safetyCar: true, dnfCount: 2,
+            predictedOrder: ['d1', 'd2', 'd3'], predictedPoleDriverId: 'd1', safetyCar: true, dnfCount: 2,
         });
 
         expect(result.id).toBe('prediction-1'); // mismo id, no crea uno nuevo
@@ -107,7 +108,7 @@ describe('SubmitPredictionUseCase', () => {
         mockLeagueRepo.findById.mockResolvedValue(null);
 
         await expect(
-            useCase.execute({ leagueId: 'league-1', raceId: 'race-1', userId: 'user-1', predictedOrder: ['d1', 'd2', 'd3'], safetyCar: true, dnfCount: 0 })
+            useCase.execute({ leagueId: 'league-1', raceId: 'race-1', userId: 'user-1', predictedOrder: ['d1', 'd2', 'd3'], predictedPoleDriverId: 'd1', safetyCar: true, dnfCount: 0 })
         ).rejects.toThrow('League not found');
     });
 
@@ -116,7 +117,7 @@ describe('SubmitPredictionUseCase', () => {
         mockMemberRepo.findByLeagueAndUser.mockResolvedValue(null);
 
         await expect(
-            useCase.execute({ leagueId: 'league-1', raceId: 'race-1', userId: 'user-1', predictedOrder: ['d1', 'd2', 'd3'], safetyCar: true, dnfCount: 0 })
+            useCase.execute({ leagueId: 'league-1', raceId: 'race-1', userId: 'user-1', predictedOrder: ['d1', 'd2', 'd3'], predictedPoleDriverId: 'd1', safetyCar: true, dnfCount: 0 })
         ).rejects.toThrow('You must be an active member of this league to submit a prediction');
     });
 
@@ -126,7 +127,7 @@ describe('SubmitPredictionUseCase', () => {
         mockRaceRepo.findById.mockResolvedValue(null);
 
         await expect(
-            useCase.execute({ leagueId: 'league-1', raceId: 'race-1', userId: 'user-1', predictedOrder: ['d1', 'd2', 'd3'], safetyCar: true, dnfCount: 0 })
+            useCase.execute({ leagueId: 'league-1', raceId: 'race-1', userId: 'user-1', predictedOrder: ['d1', 'd2', 'd3'], predictedPoleDriverId: 'd1', safetyCar: true, dnfCount: 0 })
         ).rejects.toThrow('Race not found');
     });
 
@@ -140,7 +141,7 @@ describe('SubmitPredictionUseCase', () => {
         }));
 
         await expect(
-            useCase.execute({ leagueId: 'league-1', raceId: 'race-1', userId: 'user-1', predictedOrder: ['d1', 'd2', 'd3'], safetyCar: true, dnfCount: 0 })
+            useCase.execute({ leagueId: 'league-1', raceId: 'race-1', userId: 'user-1', predictedOrder: ['d1', 'd2', 'd3'], predictedPoleDriverId: 'd1', safetyCar: true, dnfCount: 0 })
         ).rejects.toThrow('Predictions are closed for this race');
     });
 
@@ -150,7 +151,7 @@ describe('SubmitPredictionUseCase', () => {
         mockRaceRepo.findById.mockResolvedValue(scheduledRace());
 
         await expect(
-            useCase.execute({ leagueId: 'league-1', raceId: 'race-1', userId: 'user-1', predictedOrder: ['d1', 'd2', 'd3'], safetyCar: true, dnfCount: 0 })
+            useCase.execute({ leagueId: 'league-1', raceId: 'race-1', userId: 'user-1', predictedOrder: ['d1', 'd2', 'd3'], predictedPoleDriverId: 'd1', safetyCar: true, dnfCount: 0 })
         ).rejects.toThrow('This league requires exactly 10 predicted positions');
     });
 
@@ -160,7 +161,7 @@ describe('SubmitPredictionUseCase', () => {
         mockRaceRepo.findById.mockResolvedValue(scheduledRace());
 
         await expect(
-            useCase.execute({ leagueId: 'league-1', raceId: 'race-1', userId: 'user-1', predictedOrder: ['d1', 'd2', 'd3'], safetyCar: true, dnfCount: 0 })
+            useCase.execute({ leagueId: 'league-1', raceId: 'race-1', userId: 'user-1', predictedOrder: ['d1', 'd2', 'd3'], predictedPoleDriverId: 'd1', safetyCar: true, dnfCount: 0 })
         ).rejects.toThrow('This league requires a tracked driver position prediction');
     });
 
@@ -170,7 +171,7 @@ describe('SubmitPredictionUseCase', () => {
         mockRaceRepo.findById.mockResolvedValue(scheduledRace());
 
         await expect(
-            useCase.execute({ leagueId: 'league-1', raceId: 'race-1', userId: 'user-1', predictedOrder: ['d1', 'd2', 'd3'], trackedDriverPosition: 5, safetyCar: true, dnfCount: 0 })
+            useCase.execute({ leagueId: 'league-1', raceId: 'race-1', userId: 'user-1', predictedOrder: ['d1', 'd2', 'd3'], predictedPoleDriverId: 'd1', trackedDriverPosition: 5, safetyCar: true, dnfCount: 0 })
         ).rejects.toThrow('This league does not track a driver, tracked driver position must not be provided');
     });
 });
