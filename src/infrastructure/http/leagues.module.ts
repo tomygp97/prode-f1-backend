@@ -24,11 +24,15 @@ import { LeagueRepository } from '../../domain/ports/league.repository';
 import { LeagueMemberRepository } from '../../domain/ports/league-member.repository';
 import { LeaguePrizeRepository } from '../../domain/ports/league-prize.repository';
 import { InviteCodeGenerator } from '../../domain/ports/invite-code-generator';
+import { DriverRepository } from '../../domain/ports/driver.repository';
+import { UserRepository } from '../../domain/ports/user.repository';
 
 // Repositorios Prisma (implementaciones)
 import { LeaguePrismaRepository } from '../database/repositories/league.prisma.repository';
 import { LeagueMemberPrismaRepository } from '../database/repositories/league-member.prisma.repository';
 import { LeaguePrizePrismaRepository } from '../database/repositories/league-prize.prisma.repository';
+import { DriverPrismaRepository } from '../database/repositories/driver.prisma.repository';
+import { UserPrismaRepository } from '../database/repositories/user.prisma.repository';
 
 // Otros servicios de infraestructura
 import { NanoIdInviteCodeGenerator } from '../services/invite-code.generator';
@@ -56,6 +60,8 @@ import { NanoIdInviteCodeGenerator } from '../services/invite-code.generator';
     { provide: LeagueMemberRepository, useClass: LeagueMemberPrismaRepository },
     { provide: LeaguePrizeRepository, useClass: LeaguePrizePrismaRepository },
     { provide: InviteCodeGenerator, useClass: NanoIdInviteCodeGenerator },
+    { provide: DriverRepository, useClass: DriverPrismaRepository },
+    { provide: UserRepository, useClass: UserPrismaRepository },
   ],
   exports: [LeagueRepository, LeagueMemberRepository],
 })

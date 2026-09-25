@@ -1,10 +1,11 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { BadRequestException, Injectable, Inject } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { League } from '../../../domain/entities/league.entity';
 import { LeagueMember } from '../../../domain/entities/league-member.entity';
 import { LeagueRepository } from '../../../domain/ports/league.repository';
 import { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
 import { InviteCodeGenerator } from '../../../domain/ports/invite-code-generator';
+import { DriverRepository } from '../../../domain/ports/driver.repository';
 
 @Injectable()
 export class CreateLeagueUseCase {
@@ -12,6 +13,7 @@ export class CreateLeagueUseCase {
     private readonly leagueRepo: LeagueRepository,
     private readonly memberRepo: LeagueMemberRepository,
     private readonly codeGen: InviteCodeGenerator,
+    private readonly driverRepo: DriverRepository,
   ) {}
   async execute(input: {
     name: string;
@@ -21,6 +23,14 @@ export class CreateLeagueUseCase {
     seasonId: string;
     trackedDriverId?: string | null;
   }): Promise<League> {
+    // El piloto seguido (uno por liga, cualquiera) tiene que ser del plantel de esa temporada
+    if (input.trackedDriverId) {
+      const driver = await this.driverRepo.findById(input.trackedDriverId);
+      if (!driver || driver.seasonId !== input.seasonId) {
+        throw new BadRequestException('The tracked driver is not part of this season');
+      }
+    }
+
     const league = League.create({
       id: randomUUID(),
       name: input.name,
