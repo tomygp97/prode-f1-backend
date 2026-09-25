@@ -4,7 +4,6 @@ import { SharedAuthModule } from './shared-auth/shared-auth.module';
 import { LeaguesModule } from './leagues.module';
 import { RacesModule } from './races.module';
 import { PredictionsModule } from './predictions.module';
-import { AuthModule } from './auth.module'
 
 import { RankingController } from './controllers/ranking.controller';
 
@@ -16,11 +15,13 @@ import { LeagueRankingRepository } from '../../domain/ports/league-ranking.repos
 import { LeagueRankingPrismaRepository } from '../database/repositories/league-ranking.prisma.repository';
 import { PredictionScoreRepository } from '../../domain/ports/prediction-score.repository';
 import { PredictionScorePrismaRepository } from '../database/repositories/prediction-score.prisma.repository';
+import { UserRepository } from '../../domain/ports/user.repository';
+import { UserPrismaRepository } from '../database/repositories/user.prisma.repository';
 
 import { CalculateScoresJob } from '../jobs/calculate-scores.job';
 
 @Module({
-  imports: [DatabaseModule, SharedAuthModule, LeaguesModule, RacesModule, PredictionsModule, AuthModule],
+  imports: [DatabaseModule, SharedAuthModule, LeaguesModule, RacesModule, PredictionsModule],
   controllers: [RankingController],
   providers: [
     CalculateRaceScoresUseCase,
@@ -29,6 +30,7 @@ import { CalculateScoresJob } from '../jobs/calculate-scores.job';
     CalculateScoresJob,
     { provide: LeagueRankingRepository, useClass: LeagueRankingPrismaRepository },
     { provide: PredictionScoreRepository, useClass: PredictionScorePrismaRepository },
+    { provide: UserRepository, useClass: UserPrismaRepository },
   ],
 })
 export class RankingModule {}

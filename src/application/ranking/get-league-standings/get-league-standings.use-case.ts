@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { LeagueRankingRepository } from '../../../domain/ports/league-ranking.repository';
 import { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
 import { PredictionScoreRepository, LeagueRaceScoreEntry } from '../../../domain/ports/prediction-score.repository';
@@ -23,31 +23,36 @@ export class GetLeagueStandingsUseCase {
     private readonly userRepo: UserRepository,
   ) {}
 
-  async execute(input: { leagueId: string }): Promise<StandingEntry[]> {
-    const [members, rankings, raceScores] = await Promise.all([
-      this.memberRepo.findActiveMembersByLeague(input.leagueId),
+  async execute(input: { leagueId: string; requesterId: string }): Promise<StandingEntry[]> {
+    const members = await this.memberRepo.findActiveMembersByLeague(input.leagueId);
+
+    // Los standings exponen nombres: solo los ven los miembros activos de la liga
+    if (!members.some((member) => member.userId === input.requesterId)) {
+      throw new ForbiddenException('You must be a member of this league to view its standings');
+    }
+
+    const [rankings, raceScores, users] = await Promise.all([
       this.rankingRepo.findAllByLeague(input.leagueId),
       this.scoreRepo.findAllByLeague(input.leagueId),
+      this.userRepo.findByIds(members.map((member) => member.userId)),
     ]);
 
     const rankingByUserId = new Map(rankings.map((r) => [r.userId, r]));
+    const userNameById = new Map(users.map((user) => [user.id, user.name]));
     const raceWinsByUserId = this.calculateRaceWins(raceScores);
     const previousTotalByUserId = this.calculatePreviousTotals(raceScores);
 
-    const rows = await Promise.all(
-      members.map(async (member) => {
-        const ranking = rankingByUserId.get(member.userId);
-        const user = await this.userRepo.findById(member.userId);
-        return {
-          userId: member.userId,
-          userName: user?.name ?? 'Usuario',
-          totalPoints: ranking?.totalPoints ?? 0,
-          racesCounted: ranking?.racesCounted ?? 0,
-          raceWins: raceWinsByUserId.get(member.userId) ?? 0,
-          previousTotalPoints: previousTotalByUserId.get(member.userId) ?? 0,
-        };
-      }),
-    );
+    const rows = members.map((member) => {
+      const ranking = rankingByUserId.get(member.userId);
+      return {
+        userId: member.userId,
+        userName: userNameById.get(member.userId) ?? 'Usuario',
+        totalPoints: ranking?.totalPoints ?? 0,
+        racesCounted: ranking?.racesCounted ?? 0,
+        raceWins: raceWinsByUserId.get(member.userId) ?? 0,
+        previousTotalPoints: previousTotalByUserId.get(member.userId) ?? 0,
+      };
+    });
 
     const sorted = [...rows].sort((a, b) => b.totalPoints - a.totalPoints);
     const currentRankByUserId = this.assignCompetitionRanks(sorted, (r) => r.totalPoints);
