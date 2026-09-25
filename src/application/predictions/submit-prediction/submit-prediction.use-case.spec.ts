@@ -8,6 +8,8 @@ import { Race } from '../../../domain/entities/race.entity';
 import { Prediction } from '../../../domain/entities/prediction.entity';
 import { RaceStatus } from '../../../domain/enums/race-status.enum';
 import { SubmitPredictionUseCase } from './submit-prediction.use-case';
+import { RaceEntryRepository } from '../../../domain/ports/race-entry.repository';
+import { RaceGridEntryView } from '../../../domain/views/race-grid.view';
 
 const mockPredictionRepo: jest.Mocked<PredictionRepository> = {
     save: jest.fn(),
@@ -46,6 +48,19 @@ const mockRaceRepo: jest.Mocked<RaceRepository> = {
     findRacesPendingResultsSync: jest.fn(),
     updateStatus: jest.fn(),
 };
+
+const mockRaceEntryRepo: jest.Mocked<RaceEntryRepository> = {
+    replaceForRace: jest.fn(),
+    findByRaceId: jest.fn(),
+    findGridByRaceId: jest.fn(),
+    findLatestGrid: jest.fn(),
+};
+
+const gridOf = (...driverIds: string[]): RaceGridEntryView[] => driverIds.map((driverId, i) => ({
+    driverId, driverNumber: i + 1, name: driverId, acronym: driverId.toUpperCase(),
+    team: { id: 'team-1', name: 'Team', colour: 'FFFFFF' },
+}));
+
 describe('SubmitPredictionUseCase', () => {
     let useCase: SubmitPredictionUseCase;
 
@@ -65,8 +80,49 @@ describe('SubmitPredictionUseCase', () => {
     });
 
     beforeEach(() => {
-        useCase = new SubmitPredictionUseCase(mockPredictionRepo, mockLeagueRepo, mockMemberRepo, mockRaceRepo);
+        useCase = new SubmitPredictionUseCase(mockPredictionRepo, mockLeagueRepo, mockMemberRepo, mockRaceRepo, mockRaceEntryRepo);
         jest.clearAllMocks();
+        // Por defecto no hay grilla cargada: no se valida contra ella
+        mockRaceEntryRepo.findGridByRaceId.mockResolvedValue([]);
+        mockRaceEntryRepo.findLatestGrid.mockResolvedValue([]);
+    });
+
+    const validInput = {
+        leagueId: 'league-1', raceId: 'race-1', userId: 'user-1',
+        predictedOrder: ['d1', 'd2', 'd3'], predictedPoleDriverId: 'd1', safetyCar: true, dnfCount: 2,
+    };
+
+    function givenValidLeagueAndRace() {
+        mockLeagueRepo.findById.mockResolvedValue(league(3));
+        mockMemberRepo.findByLeagueAndUser.mockResolvedValue(activeMember());
+        mockRaceRepo.findById.mockResolvedValue(scheduledRace());
+        mockPredictionRepo.findByLeagueRaceAndUser.mockResolvedValue(null);
+    }
+
+    it('should reject drivers that are not on the grid of the race', async () => {
+        givenValidLeagueAndRace();
+        mockRaceEntryRepo.findGridByRaceId.mockResolvedValue(gridOf('d1', 'd2', 'd4'));
+
+        await expect(useCase.execute(validInput)).rejects.toThrow('Drivers d3 are not on the grid for this race');
+        expect(mockPredictionRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('should accept the prediction when every driver is on the grid', async () => {
+        givenValidLeagueAndRace();
+        mockRaceEntryRepo.findGridByRaceId.mockResolvedValue(gridOf('d1', 'd2', 'd3'));
+
+        await useCase.execute(validInput);
+
+        expect(mockRaceEntryRepo.findLatestGrid).not.toHaveBeenCalled();
+        expect(mockPredictionRepo.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('should validate against the latest known grid when the race has none yet', async () => {
+        givenValidLeagueAndRace();
+        mockRaceEntryRepo.findLatestGrid.mockResolvedValue(gridOf('d1', 'd2'));
+
+        await expect(useCase.execute(validInput)).rejects.toThrow('Drivers d3 are not on the grid for this race');
+        expect(mockRaceEntryRepo.findLatestGrid).toHaveBeenCalledWith('season-1');
     });
 
     it('should create a new prediction when everything is valid', async () => {

@@ -5,6 +5,7 @@ import { GetDriverByIdUseCase } from "./get-driver-by-id.use-case";
 const mockDriverRepository: jest.Mocked<DriverRepository> = {
     upsert: jest.fn(),
     findByDriverNumbers: jest.fn(),
+    createIfMissing: jest.fn(),
     findAll: jest.fn(),
     findById: jest.fn(),
 };

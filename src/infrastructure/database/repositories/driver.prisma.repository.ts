@@ -27,6 +27,15 @@ export class DriverPrismaRepository implements DriverRepository {
         return driver.id;
     }
 
+    async createIfMissing(data: { driverNumber: number; name: string; acronym: string; teamId: string; seasonId: string; }): Promise<string> {
+        const driver = await this.prisma.driver.upsert({
+            where: { driverNumber_seasonId: { driverNumber: data.driverNumber, seasonId: data.seasonId } },
+            create: data,
+            update: {},
+        });
+        return driver.id;
+    }
+
     async findByDriverNumbers(seasonId: string, driverNumbers: number[]): Promise<DriverRepositoryResult[]> {
         return this.prisma.driver.findMany({
             where: {

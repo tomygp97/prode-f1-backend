@@ -5,6 +5,7 @@ import { Driver } from '../../../domain/entities/driver.entity';
 const mockDriverRepository: jest.Mocked<DriverRepository> = {
   upsert: jest.fn(),
   findByDriverNumbers: jest.fn(),
+  createIfMissing: jest.fn(),
   findAll: jest.fn(),
   findById: jest.fn(),
 };

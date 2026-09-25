@@ -6,6 +6,7 @@ import { LeagueRepository } from '../../../domain/ports/league.repository';
 import { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
 import { RaceRepository } from '../../../domain/ports/race.repository';
 import { RaceStatus } from '../../../domain/enums/race-status.enum';
+import { RaceEntryRepository } from '../../../domain/ports/race-entry.repository';
 
 @Injectable()
 export class SubmitPredictionUseCase {
@@ -14,6 +15,7 @@ export class SubmitPredictionUseCase {
     private readonly leagueRepo: LeagueRepository,
     private readonly memberRepo: LeagueMemberRepository,
     private readonly raceRepo: RaceRepository,
+    private readonly raceEntryRepo: RaceEntryRepository,
   ) {}
 
   async execute(input: {
@@ -44,6 +46,11 @@ export class SubmitPredictionUseCase {
     if (race.status !== RaceStatus.SCHEDULED) {
       throw new BadRequestException('Predictions are closed for this race');
     }
+
+    await this.assertDriversOnGrid(race.id, race.seasonId, [
+      ...input.predictedOrder,
+      input.predictedPoleDriverId,
+    ]);
 
     if (input.predictedOrder.length !== league.predictionSlots) {
       throw new BadRequestException(
@@ -76,5 +83,21 @@ export class SubmitPredictionUseCase {
     await this.predictionRepo.save(prediction);
 
     return prediction;
+  }
+
+  // Solo se puede predecir a pilotos de la grilla de esa carrera (o de la última grilla
+  // conocida si el fin de semana todavía no empezó). Sin ninguna grilla no se bloquea.
+  private async assertDriversOnGrid(raceId: string, seasonId: string, driverIds: string[]): Promise<void> {
+    let grid = await this.raceEntryRepo.findGridByRaceId(raceId);
+    if (grid.length === 0) {
+      grid = await this.raceEntryRepo.findLatestGrid(seasonId);
+    }
+    if (grid.length === 0) return;
+
+    const gridDriverIds = new Set(grid.map((entry) => entry.driverId));
+    const offGrid = [...new Set(driverIds)].filter((driverId) => !gridDriverIds.has(driverId));
+    if (offGrid.length > 0) {
+      throw new BadRequestException(`Drivers ${offGrid.join(', ')} are not on the grid for this race`);
+    }
   }
 }

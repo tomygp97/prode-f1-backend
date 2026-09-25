@@ -31,4 +31,6 @@ export abstract class OfficialResultsProvider {
     abstract hasRaceResults(sessionKey: number): Promise<boolean>;
     abstract hasSafetyCar(sessionKey: number): Promise<boolean>;
     abstract getDrivers(sessionKey: number): Promise<DriverData[]>;
+    /** Última sesión que ya empezó (de un meeting o de todo el año). null si todavía no empezó ninguna. */
+    abstract getLatestStartedSessionKey(filter: { meetingKey?: number; year?: number }): Promise<number | null>;
 }

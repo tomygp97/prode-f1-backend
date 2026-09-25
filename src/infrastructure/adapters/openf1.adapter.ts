@@ -3,6 +3,7 @@ import axios from 'axios';
 import type { OfficialResultsProvider, RaceMeetingData, DriverData, DriverSessionResult } from '../../domain/ports/official-results.provider';
 
 const OPENF1_BASE_URL = 'https://api.openf1.org/v1';
+const MAX_RETRIES = 5;
 
 interface OpenF1Meeting {
     meeting_key: number;
@@ -23,9 +24,10 @@ interface OpenF1Session {
 export class OpenF1Adapter implements OfficialResultsProvider {
     private readonly logger = new Logger(OpenF1Adapter.name);
 
+    // Backoff exponencial ante 429 (2s, 4s, 8s, 16s, 32s), respetando Retry-After si viene
     private async executeWithRetry<T>(
         request: () => Promise<T>,
-        retries = 3,
+        retries = MAX_RETRIES,
     ): Promise<T> {
         try {
             return await request();
@@ -35,19 +37,34 @@ export class OpenF1Adapter implements OfficialResultsProvider {
                 error.response?.status === 429 &&
                 retries > 0
             ) {
-                const attempt = 4 - retries;
+                const attempt = MAX_RETRIES - retries + 1;
+                const retryAfterSeconds = Number(error.response.headers?.['retry-after']);
+                const delaySeconds = retryAfterSeconds > 0 ? retryAfterSeconds : 2 ** attempt;
 
                 this.logger.warn(
-                    `OpenF1 rate limit reached. Retry ${attempt}/3 in 2 seconds...`,
+                    `OpenF1 rate limit reached. Retry ${attempt}/${MAX_RETRIES} in ${delaySeconds} seconds...`,
                 );
 
-                await new Promise<void>(resolve => setTimeout(resolve, 2000));
-    
+                await new Promise<void>(resolve => setTimeout(resolve, delaySeconds * 1000));
+
                 return this.executeWithRetry(request, retries - 1);
             }
-    
+
             throw error;
         }
+    }
+
+    // OpenF1 responde 404 {"detail":"No results found."} cuando una sesión todavía no tiene datos
+    private async getList<T>(url: string): Promise<T[]> {
+        return this.executeWithRetry(async () => {
+            try {
+                const res = await axios.get(url);
+                return Array.isArray(res.data) ? (res.data as T[]) : [];
+            } catch (error) {
+                if (axios.isAxiosError(error) && error.response?.status === 404) return [];
+                throw error;
+            }
+        });
     }
 
     async getMeetings(year: number): Promise<RaceMeetingData[]> {
@@ -98,25 +115,20 @@ export class OpenF1Adapter implements OfficialResultsProvider {
     }
 
     async getSessionResults(sessionKey: number): Promise<DriverSessionResult[]> {
-        return this.executeWithRetry(async () => {
-            const res = await axios.get(
-                `${OPENF1_BASE_URL}/session_result?session_key=${sessionKey}`
-            );
-        
-            return res.data.map((entry: any) => ({
-                externalDriverNumber: entry.driver_number,
-                position: entry.position,
-                dnf: entry.dnf,
-            }));
-        });
+        const results = await this.getList<any>(
+            `${OPENF1_BASE_URL}/session_result?session_key=${sessionKey}`
+        );
+
+        return results.map((entry) => ({
+            externalDriverNumber: entry.driver_number,
+            position: entry.position,
+            dnf: entry.dnf,
+        }));
     }
 
     async hasRaceResults(sessionKey: number): Promise<boolean> {
-        return this.executeWithRetry(async () => {
-            const results = await this.getSessionResults(sessionKey);
-
-            return results.length > 0;
-        });
+        const results = await this.getSessionResults(sessionKey);
+        return results.length > 0;
     }
 
     async hasSafetyCar(sessionKey: number): Promise<boolean> {
@@ -129,18 +141,32 @@ export class OpenF1Adapter implements OfficialResultsProvider {
     }
 
     async getDrivers(sessionKey: number): Promise<DriverData[]> {
-        return this.executeWithRetry(async () => {
-            const res = await axios.get(
-                `${OPENF1_BASE_URL}/drivers?session_key=${sessionKey}`
-            );
+        const drivers = await this.getList<any>(
+            `${OPENF1_BASE_URL}/drivers?session_key=${sessionKey}`
+        );
 
-            return res.data.map((d: any) => ({
-                driverNumber: d.driver_number,
-                fullName: d.full_name,
-                acronym: d.name_acronym,
-                teamName: d.team_name,
-                teamColour: d.team_colour,
-            }));
-        });
+        return drivers.map((d) => ({
+            driverNumber: d.driver_number,
+            fullName: d.full_name,
+            acronym: d.name_acronym,
+            teamName: d.team_name,
+            teamColour: d.team_colour,
+        }));
+    }
+
+    async getLatestStartedSessionKey(filter: { meetingKey?: number; year?: number }): Promise<number | null> {
+        const params = [
+            filter.meetingKey ? `meeting_key=${filter.meetingKey}` : null,
+            filter.year ? `year=${filter.year}` : null,
+            `date_start<=${new Date().toISOString().slice(0, 19)}`,
+        ].filter(Boolean);
+
+        const sessions = await this.getList<OpenF1Session>(`${OPENF1_BASE_URL}/sessions?${params.join('&')}`);
+
+        const latest = sessions.reduce<OpenF1Session | null>(
+            (acc, s) => (!acc || new Date(s.date_start) > new Date(acc.date_start) ? s : acc),
+            null,
+        );
+        return latest?.session_key ?? null;
     }
 }

@@ -75,9 +75,9 @@ describe('CalculateRaceScoresUseCase', () => {
     });
 
     const driverResults = () => [
-        RaceDriverResult.create({ id: 'dr1', raceId: 'race-1', driverId: 'd1', position: 1, dnf: false }),
-        RaceDriverResult.create({ id: 'dr2', raceId: 'race-1', driverId: 'd2', position: 2, dnf: false }),
-        RaceDriverResult.create({ id: 'dr3', raceId: 'race-1', driverId: 'd3', position: 4, dnf: false }),
+        RaceDriverResult.create({ id: 'dr1', raceId: 'race-1', driverId: 'd1', teamId: 't1', position: 1, dnf: false }),
+        RaceDriverResult.create({ id: 'dr2', raceId: 'race-1', driverId: 'd2', teamId: 't1', position: 2, dnf: false }),
+        RaceDriverResult.create({ id: 'dr3', raceId: 'race-1', driverId: 'd3', teamId: 't1', position: 4, dnf: false }),
     ];
 
     const league = (trackedDriverId: string | null = null) => League.create({

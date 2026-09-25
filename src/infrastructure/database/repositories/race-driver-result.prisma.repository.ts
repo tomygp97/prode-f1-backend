@@ -12,6 +12,7 @@ export class RaceDriverResultPrismaRepository implements RaceDriverResultReposit
     async replaceMany(data: {
             raceId: string;
             driverId: string;
+            teamId: string;
             position: number;
             dnf: boolean;
         }[]
