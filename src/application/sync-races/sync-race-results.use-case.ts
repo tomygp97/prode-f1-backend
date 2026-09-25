@@ -1,6 +1,8 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { OfficialResultsProvider } from "../../domain/ports/official-results.provider";
-import { DriverRepository } from "../../domain/ports/driver.repository";
+import { DriverRepository, DriverRepositoryResult } from "../../domain/ports/driver.repository";
+import { RaceEntryRepository } from "../../domain/ports/race-entry.repository";
+import { SyncRaceEntriesUseCase } from "./sync-race-entries.use-case";
 import { RaceResultRepository } from "../../domain/ports/race-result.repository";
 import { RaceDriverResultRepository, ReplaceRaceDriverResultData } from "../../domain/ports/race-driver-result.repository";
 import { RaceRepository } from "../../domain/ports/race.repository";
@@ -18,6 +20,8 @@ export class SyncRaceResultsUseCase{
         private readonly raceResultRepository: RaceResultRepository,
         private readonly raceDriverResultRepository: RaceDriverResultRepository,
         private readonly raceRepository: RaceRepository,
+        private readonly raceEntryRepository: RaceEntryRepository,
+        private readonly syncRaceEntriesUseCase: SyncRaceEntriesUseCase,
     ) {}
 
     async execute(race: Race): Promise<void> {
@@ -67,6 +71,10 @@ export class SyncRaceResultsUseCase{
             );
         }
 
+        // La sesión de carrera ya corrida es la fuente confiable de la grilla: trae a los
+        // reemplazos de último momento. Se agregan al plantel sin pisar el equipo actual.
+        await this.syncRaceEntriesUseCase.execute(race, race.raceSessionKey, { updateCurrentTeam: false });
+
         const driverNumbers = [
             ...new Set([
                 ...sessionResults.map(r => r.externalDriverNumber),
@@ -74,53 +82,45 @@ export class SyncRaceResultsUseCase{
             ]),
         ];
 
-        const drivers = await this.driverRepository.findByDriverNumbers(
-            race.seasonId,
-            driverNumbers,
-        );
+        let driversByNumber = await this.findDriversByNumber(race.seasonId, driverNumbers);
 
-        const driversByNumber  = new Map(
-            drivers.map(driver => [
-                driver.driverNumber,
-                driver,
-            ]),
-        );
+        // Caso raro: el de la pole no largó la carrera, así que no está en esa sesión
+        if (!driversByNumber.has(poleResult.externalDriverNumber)) {
+            await this.syncRaceEntriesUseCase.addMissingToRoster(race.seasonId, race.qualifyingSessionKey);
+            driversByNumber = await this.findDriversByNumber(race.seasonId, driverNumbers);
+        }
 
-        const poleDriver = driversByNumber.get(poleResult.externalDriverNumber);
-        if (!poleDriver) {
+        const missing = driverNumbers.filter(number => !driversByNumber.has(number));
+        if (missing.length > 0) {
             throw new Error(
-                `Pole driver ${poleResult.externalDriverNumber} not found for season ${race.seasonId} while syncing ${race.name}`,
+                `Drivers ${missing.join(', ')} not found for season ${race.seasonId} while syncing ${race.name}`,
             );
         }
 
-        const winnerDriver = driversByNumber.get(winner.externalDriverNumber);
-        if (!winnerDriver) {
-            throw new Error(
-                `Race winner driver ${winner.externalDriverNumber} not found for season ${race.seasonId} while syncing ${race.name}`,
-            );
-        }
+        // Equipo con el que corrió cada piloto ESTA carrera (grilla); si no está, su equipo actual
+        const entries = await this.raceEntryRepository.findByRaceId(race.id);
+        const teamIdByDriverId = new Map(entries.map(entry => [entry.driverId, entry.teamId]));
+        const teamOf = (driver: DriverRepositoryResult) => teamIdByDriverId.get(driver.id) ?? driver.teamId;
 
-        const raceDriversResults: ReplaceRaceDriverResultData[] = [];
-        for (const result of sessionResults) {
-            const driver = driversByNumber.get(result.externalDriverNumber)
-            if (!driver) {
-                throw new Error(
-                    `Driver ${result.externalDriverNumber} not found for season ${race.seasonId} while syncing ${race.name}`,
-                );
-            }
+        const poleDriver = driversByNumber.get(poleResult.externalDriverNumber)!;
+        const winnerDriver = driversByNumber.get(winner.externalDriverNumber)!;
 
-            raceDriversResults.push({
+        const raceDriversResults: ReplaceRaceDriverResultData[] = sessionResults.map(result => {
+            const driver = driversByNumber.get(result.externalDriverNumber)!;
+            return {
                 raceId: race.id,
                 driverId: driver.id,
+                teamId: teamOf(driver),
                 position: result.position,
                 dnf: result.dnf,
-            });
-        }
+            };
+        });
+
         await this.raceResultRepository.upsert({
             raceId: race.id,
             poleDriverId: poleDriver.id,
             raceWinnerDriverId: winnerDriver.id,
-            raceWinnerTeamId: winnerDriver.teamId,
+            raceWinnerTeamId: teamOf(winnerDriver),
             safetyCar,
             dnfCount,
         })
@@ -137,5 +137,13 @@ export class SyncRaceResultsUseCase{
         this.logger.log(
             `Results synced successfully for ${race.name}`
         );
+    }
+
+    private async findDriversByNumber(
+        seasonId: string,
+        driverNumbers: number[],
+    ): Promise<Map<number, DriverRepositoryResult>> {
+        const drivers = await this.driverRepository.findByDriverNumbers(seasonId, driverNumbers);
+        return new Map(drivers.map(driver => [driver.driverNumber, driver]));
     }
 }

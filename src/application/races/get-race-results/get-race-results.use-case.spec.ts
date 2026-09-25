@@ -65,6 +65,7 @@ const fakeDriverResult = RaceDriverResult.create({
     id: 'driver-result-1',
     raceId: 'race-1',
     driverId: 'driver-1',
+    teamId: 'team-1',
     position: 1,
     dnf: false,
 });

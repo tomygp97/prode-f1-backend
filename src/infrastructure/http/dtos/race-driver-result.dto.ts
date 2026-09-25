@@ -4,6 +4,7 @@ export class RaceDriverResultDto {
     id!: string;
     raceId!: string;
     driverId!: string;
+    teamId!: string;
     position!: number | null;
     dnf!: boolean;
 
@@ -12,6 +13,7 @@ export class RaceDriverResultDto {
             id: result.id,
             raceId: result.raceId,
             driverId: result.driverId,
+            teamId: result.teamId,
             position: result.position,
             dnf: result.dnf,
         };

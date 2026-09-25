@@ -8,6 +8,7 @@ export class RaceDriverResultMapper {
             id: prismaRaceDriverResult.id,
             raceId: prismaRaceDriverResult.raceId,
             driverId: prismaRaceDriverResult.driverId,
+            teamId: prismaRaceDriverResult.teamId,
             position: prismaRaceDriverResult.position,
             dnf: prismaRaceDriverResult.dnf,
         })

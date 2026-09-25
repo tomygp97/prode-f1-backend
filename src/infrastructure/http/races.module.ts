@@ -2,7 +2,12 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { DevController } from '../../dev/dev.controller';
 import { SyncCalendarUseCase } from '../../application/sync-races/sync-calendar.use-case';
-import { SyncDriversUseCase } from '../../application/sync-races/sync-drivers.use-case';
+import { SyncRaceEntriesUseCase } from '../../application/sync-races/sync-race-entries.use-case';
+import { SyncUpcomingGridUseCase } from '../../application/sync-races/sync-upcoming-grid.use-case';
+import { SyncUpcomingGridJob } from '../jobs/sync-upcoming-grid.job';
+import { GetRaceEntriesUseCase } from '../../application/races/get-race-entries/get-race-entries.use-case';
+import { RaceEntryRepository } from '../../domain/ports/race-entry.repository';
+import { RaceEntryPrismaRepository } from '../database/repositories/race-entry.prisma.repository';
 import { UpdateRaceStatusUseCase } from '../../application/sync-races/update-race-statuses.use-case';
 import { SyncRaceResultsUseCase } from '../../application/sync-races/sync-race-results.use-case';
 import { OfficialResultsProvider } from '../../domain/ports/official-results.provider';
@@ -54,7 +59,10 @@ const devControllers = process.env.ENABLE_DEV_TOOLS === 'true' ? [DevController]
       SyncCalendarUseCase,
       UpdateRaceStatusJob,
       UpdateRaceStatusUseCase,
-      SyncDriversUseCase,
+      SyncRaceEntriesUseCase,
+      SyncUpcomingGridUseCase,
+      SyncUpcomingGridJob,
+      GetRaceEntriesUseCase,
       SyncRaceResultsUseCase,
       SyncAllRaceResultsUseCase,
       SyncRaceResultsJob,
@@ -75,8 +83,9 @@ const devControllers = process.env.ENABLE_DEV_TOOLS === 'true' ? [DevController]
       { provide: LeagueRepository, useClass: LeaguePrismaRepository },
       { provide: RaceResultRepository, useClass: RaceResultPrismaRepository },
       { provide: RaceDriverResultRepository, useClass: RaceDriverResultPrismaRepository },
+      { provide: RaceEntryRepository, useClass: RaceEntryPrismaRepository },
       { provide: RaceRepository, useClass: RacePrismaRepository },
     ],
-    exports: [RaceRepository, RaceResultRepository, RaceDriverResultRepository],
+    exports: [RaceRepository, RaceResultRepository, RaceDriverResultRepository, RaceEntryRepository],
   })
 export class RacesModule{}

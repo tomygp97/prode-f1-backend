@@ -3,14 +3,18 @@ import { DriverSessionResult, OfficialResultsProvider } from "../../domain/ports
 import { SyncRaceResultsUseCase } from "./sync-race-results.use-case";
 import { RaceResultRepository } from "../../domain/ports/race-result.repository";
 import { RaceDriverResultRepository } from "../../domain/ports/race-driver-result.repository";
-import { DriverRepository } from "../../domain/ports/driver.repository";
+import { DriverRepository, DriverRepositoryResult } from "../../domain/ports/driver.repository";
+import { RaceEntryRepository } from "../../domain/ports/race-entry.repository";
+import { RaceEntry } from "../../domain/entities/race-entry.entity";
 import { Race } from "../../domain/entities/race.entity";
 import { RaceStatus } from "../../domain/enums/race-status.enum";
+import { SyncRaceEntriesUseCase } from "./sync-race-entries.use-case";
 
 const mockOfficialResultsProvider: jest.Mocked<OfficialResultsProvider> = {
     getMeetings: jest.fn(),
     getSessionResults: jest.fn(),
     getDrivers: jest.fn(),
+    getLatestStartedSessionKey: jest.fn(),
     hasRaceResults: jest.fn(),
     hasSafetyCar: jest.fn(),
 };
@@ -18,6 +22,7 @@ const mockOfficialResultsProvider: jest.Mocked<OfficialResultsProvider> = {
 const mockDriverRepository: jest.Mocked<DriverRepository> = {
     upsert: jest.fn(),
     findByDriverNumbers: jest.fn(),
+    createIfMissing: jest.fn(),
     findAll: jest.fn(),
     findById: jest.fn(),
 };
@@ -46,6 +51,18 @@ const mockRaceRepository: jest.Mocked<RaceRepository> = {
     updateStatus: jest.fn(),
 };
 
+const mockRaceEntryRepository: jest.Mocked<RaceEntryRepository> = {
+    replaceForRace: jest.fn(),
+    findByRaceId: jest.fn(),
+    findGridByRaceId: jest.fn(),
+    findLatestGrid: jest.fn(),
+};
+
+const mockSyncRaceEntries = {
+    execute: jest.fn(),
+    addMissingToRoster: jest.fn(),
+} as unknown as jest.Mocked<SyncRaceEntriesUseCase>;
+
 const fakeRace = Race.create({
     id: 'race-1',
     seasonId: 'season-1',
@@ -62,70 +79,59 @@ const fakeRace = Race.create({
 });
 
 const fakeRaceSessionResults: DriverSessionResult[] = [
-    {
-        externalDriverNumber: 1,
-        position: 1,
-        dnf: false,
-    },
-    {
-        externalDriverNumber: 16,
-        position: 2,
-        dnf: false,
-    },
-    {
-        externalDriverNumber: 63,
-        position: 3,
-        dnf: true,
-    },
+    { externalDriverNumber: 1, position: 1, dnf: false },
+    { externalDriverNumber: 16, position: 2, dnf: false },
+    { externalDriverNumber: 63, position: 3, dnf: true },
 ];
 
 const fakeQualifyingResults: DriverSessionResult[] = [
-    {
-        externalDriverNumber: 16,
-        position: 1,
-        dnf: false,
-    },
-    {
-        externalDriverNumber: 1,
-        position: 2,
-        dnf: false,
-    },
+    { externalDriverNumber: 16, position: 1, dnf: false },
+    { externalDriverNumber: 1, position: 2, dnf: false },
 ];
+
+// teamId = equipo ACTUAL del piloto (plantel)
+const driver = (number: number, teamId: string): DriverRepositoryResult => ({
+    id: `driver-${number}`, driverNumber: number, teamId,
+});
+const allDrivers = [driver(1, 'team-redbull'), driver(16, 'team-ferrari'), driver(63, 'team-mercedes')];
+
+// Grilla de ESTA carrera: el #1 corrió con otro equipo que el actual
+const entry = (driverId: string, teamId: string) => RaceEntry.create({ id: `entry-${driverId}`, raceId: 'race-1', driverId, teamId });
+const raceGrid = [entry('driver-1', 'team-racing-bulls'), entry('driver-16', 'team-ferrari'), entry('driver-63', 'team-mercedes')];
+
+function givenOfficialResults(race: DriverSessionResult[] = fakeRaceSessionResults, qualifying: DriverSessionResult[] = fakeQualifyingResults) {
+    mockOfficialResultsProvider.getSessionResults
+        .mockResolvedValueOnce(race)
+        .mockResolvedValueOnce(qualifying);
+    mockOfficialResultsProvider.hasSafetyCar.mockResolvedValue(true);
+}
+
+function expectNothingSaved() {
+    expect(mockRaceResultRepository.upsert).not.toHaveBeenCalled();
+    expect(mockRaceDriverResultRepository.replaceMany).not.toHaveBeenCalled();
+    expect(mockRaceRepository.updateStatus).not.toHaveBeenCalled();
+}
 
 describe('SyncRaceResultsUseCase', () => {
     let useCase: SyncRaceResultsUseCase;
 
     beforeEach(() => {
         jest.clearAllMocks();
-        useCase = new SyncRaceResultsUseCase(mockOfficialResultsProvider, mockDriverRepository, mockRaceResultRepository, mockRaceDriverResultRepository, mockRaceRepository);
+        useCase = new SyncRaceResultsUseCase(
+            mockOfficialResultsProvider,
+            mockDriverRepository,
+            mockRaceResultRepository,
+            mockRaceDriverResultRepository,
+            mockRaceRepository,
+            mockRaceEntryRepository,
+            mockSyncRaceEntries,
+        );
+        mockRaceEntryRepository.findByRaceId.mockResolvedValue(raceGrid);
     });
 
-    it('should sync race results successfully', async () => {
-        mockOfficialResultsProvider.getSessionResults
-            .mockResolvedValueOnce(fakeRaceSessionResults)
-            .mockResolvedValueOnce(fakeQualifyingResults);
-        mockOfficialResultsProvider.hasSafetyCar.mockResolvedValue(true);
-
-        mockDriverRepository.findByDriverNumbers.mockResolvedValue([
-            {
-                id: 'driver-1',
-                driverNumber: 1,
-                teamId: 'team-redbull',
-            },
-            {
-                id: 'driver-16',
-                driverNumber: 16,
-                teamId: 'team-ferrari',
-            },
-            {
-                id: 'driver-63',
-                driverNumber: 63,
-                teamId: 'team-mercedes',
-            },
-        ]);
-        mockRaceResultRepository.upsert.mockResolvedValue();
-        mockRaceDriverResultRepository.replaceMany.mockResolvedValue();
-        mockRaceRepository.updateStatus.mockResolvedValue();
+    it('should sync race results using the team each driver raced with', async () => {
+        givenOfficialResults();
+        mockDriverRepository.findByDriverNumbers.mockResolvedValue(allDrivers);
 
         await useCase.execute(fakeRace);
 
@@ -133,219 +139,83 @@ describe('SyncRaceResultsUseCase', () => {
             raceId: fakeRace.id,
             poleDriverId: 'driver-16',
             raceWinnerDriverId: 'driver-1',
-            raceWinnerTeamId: 'team-redbull',
+            raceWinnerTeamId: 'team-racing-bulls', // de la grilla, no el equipo actual
             safetyCar: true,
             dnfCount: 1,
         });
+        expect(mockRaceDriverResultRepository.replaceMany).toHaveBeenCalledWith([
+            { raceId: 'race-1', driverId: 'driver-1', teamId: 'team-racing-bulls', position: 1, dnf: false },
+            { raceId: 'race-1', driverId: 'driver-16', teamId: 'team-ferrari', position: 2, dnf: false },
+            { raceId: 'race-1', driverId: 'driver-63', teamId: 'team-mercedes', position: 3, dnf: true },
+        ]);
+        expect(mockRaceRepository.updateStatus).toHaveBeenCalledWith(fakeRace.id, RaceStatus.RESULTS_SYNCED);
+    });
 
-        expect(mockRaceDriverResultRepository.replaceMany).toHaveBeenCalled();
-        expect(mockRaceRepository.updateStatus).toHaveBeenCalledWith(
-            fakeRace.id,
-            RaceStatus.RESULTS_SYNCED
+    it('should sync the grid from the race session before resolving drivers (last-minute replacements)', async () => {
+        givenOfficialResults();
+        mockDriverRepository.findByDriverNumbers.mockResolvedValue(allDrivers);
+
+        await useCase.execute(fakeRace);
+
+        expect(mockSyncRaceEntries.execute).toHaveBeenCalledWith(fakeRace, 100, { updateCurrentTeam: false });
+        expect(mockSyncRaceEntries.execute.mock.invocationCallOrder[0])
+            .toBeLessThan(mockDriverRepository.findByDriverNumbers.mock.invocationCallOrder[0]);
+    });
+
+    it('should add the pole sitter from qualifying when he did not start the race', async () => {
+        givenOfficialResults(fakeRaceSessionResults, [{ externalDriverNumber: 44, position: 1, dnf: false }]);
+        mockDriverRepository.findByDriverNumbers
+            .mockResolvedValueOnce(allDrivers)
+            .mockResolvedValueOnce([...allDrivers, driver(44, 'team-ferrari')]);
+
+        await useCase.execute(fakeRace);
+
+        expect(mockSyncRaceEntries.addMissingToRoster).toHaveBeenCalledWith('season-1', 101);
+        expect(mockRaceResultRepository.upsert).toHaveBeenCalledWith(expect.objectContaining({ poleDriverId: 'driver-44' }));
+    });
+
+    it('should list every driver still missing and not save anything', async () => {
+        givenOfficialResults(
+            [...fakeRaceSessionResults, { externalDriverNumber: 9999, position: 4, dnf: false }],
+            [{ externalDriverNumber: 8888, position: 1, dnf: false }],
         );
+        mockDriverRepository.findByDriverNumbers.mockResolvedValue(allDrivers);
+
+        await expect(useCase.execute(fakeRace)).rejects.toThrow(
+            'Drivers 9999, 8888 not found for season season-1 while syncing Australian GP',
+        );
+        expectNothingSaved();
     });
 
     it('should throw if race has no race session key', async () => {
-        const fakeRaceWithoutSessionKey = Race.create({
-            id: 'race-1',
-            seasonId: 'season-1',
-            name: 'Australian GP',
-            circuit: 'Albert Park',
-            country: 'Australia',
-            round: 1,
-            qualifyingStartAt: new Date(),
-            raceStartAt: new Date(),
-            status: RaceStatus.FINISHED,
-            meetingKey: 1,
-            raceSessionKey: null,
-            qualifyingSessionKey: 101,
-        });
+        const raceWithoutSessionKey = Race.create({ ...fakeRace, raceSessionKey: null });
 
-        await expect(useCase.execute(fakeRaceWithoutSessionKey)).rejects.toThrow('Race Australian GP does not have a race session key');
+        await expect(useCase.execute(raceWithoutSessionKey)).rejects.toThrow('Race Australian GP does not have a race session key');
         expect(mockOfficialResultsProvider.getSessionResults).not.toHaveBeenCalled();
     });
 
     it('should throw if race has no qualifying session key', async () => {
-        const fakeRaceWithoutQualifyingSessionKey = Race.create({
-            id: 'race-1',
-            seasonId: 'season-1',
-            name: 'Australian GP',
-            circuit: 'Albert Park',
-            country: 'Australia',
-            round: 1,
-            qualifyingStartAt: new Date(),
-            raceStartAt: new Date(),
-            status: RaceStatus.FINISHED,
-            meetingKey: 1,
-            raceSessionKey: 101,
-            qualifyingSessionKey: null,
-        });
+        const raceWithoutQualifyingSessionKey = Race.create({ ...fakeRace, qualifyingSessionKey: null });
 
-        await expect(useCase.execute(fakeRaceWithoutQualifyingSessionKey)).rejects.toThrow('Race Australian GP does not have a qualifying session key');
+        await expect(useCase.execute(raceWithoutQualifyingSessionKey)).rejects.toThrow('Race Australian GP does not have a qualifying session key');
         expect(mockOfficialResultsProvider.getSessionResults).not.toHaveBeenCalled();
     });
 
     it('should throw if pole position is missing', async () => {
-        const fakeQualifyingResultsWithoutPole: DriverSessionResult[] = [
-            {
-                externalDriverNumber: 16,
-                position: 2,
-                dnf: false,
-            },
-            {
-                externalDriverNumber: 1,
-                position: 3,
-                dnf: false,
-            },
-        ];
-        mockOfficialResultsProvider.getSessionResults
-            .mockResolvedValueOnce(fakeRaceSessionResults)
-            .mockResolvedValueOnce(fakeQualifyingResultsWithoutPole);
-        mockOfficialResultsProvider.hasSafetyCar.mockResolvedValue(false);
+        givenOfficialResults(fakeRaceSessionResults, [{ externalDriverNumber: 16, position: 2, dnf: false }]);
 
         await expect(useCase.execute(fakeRace)).rejects.toThrow('Could not find pole position for Australian GP');
 
-        expect(mockDriverRepository.findByDriverNumbers).not.toHaveBeenCalled();
-        expect(mockRaceResultRepository.upsert).not.toHaveBeenCalled();
-        expect(mockRaceDriverResultRepository.replaceMany).not.toHaveBeenCalled();
-        expect(mockRaceRepository.updateStatus).not.toHaveBeenCalled();
+        expect(mockSyncRaceEntries.execute).not.toHaveBeenCalled();
+        expectNothingSaved();
     });
 
     it('should throw if winner is missing', async () => {
-        const fakeSessionResultsWithoutWinner: DriverSessionResult[] = [
-            {
-                externalDriverNumber: 16,
-                position: 2,
-                dnf: false,
-            },
-            {
-                externalDriverNumber: 1,
-                position: 3,
-                dnf: false,
-            },
-        ];
-        mockOfficialResultsProvider.getSessionResults
-            .mockResolvedValueOnce(fakeSessionResultsWithoutWinner)
-            .mockResolvedValueOnce(fakeQualifyingResults);
-        mockOfficialResultsProvider.hasSafetyCar.mockResolvedValue(false);
+        givenOfficialResults([{ externalDriverNumber: 16, position: 2, dnf: false }]);
 
         await expect(useCase.execute(fakeRace)).rejects.toThrow('Could not find race winner for Australian GP');
 
-        expect(mockDriverRepository.findByDriverNumbers).not.toHaveBeenCalled();
-        expect(mockRaceResultRepository.upsert).not.toHaveBeenCalled();
-        expect(mockRaceDriverResultRepository.replaceMany).not.toHaveBeenCalled();
-        expect(mockRaceRepository.updateStatus).not.toHaveBeenCalled();
-    });
-
-    it('should throw if pole driver is not found', async () => {
-        const fakeQualifyingResultsWithUnknownPoleDriver: DriverSessionResult[] = [
-            {
-                externalDriverNumber: 9999,
-                position: 1,
-                dnf: false,
-            },
-            {
-                externalDriverNumber: 16,
-                position: 2,
-                dnf: false,
-            },
-        ];
-        mockOfficialResultsProvider.getSessionResults
-            .mockResolvedValueOnce(fakeRaceSessionResults)
-            .mockResolvedValueOnce(fakeQualifyingResultsWithUnknownPoleDriver);
-        mockOfficialResultsProvider.hasSafetyCar.mockResolvedValue(false);
-        mockDriverRepository.findByDriverNumbers.mockResolvedValue([]);
-
-        await expect(useCase.execute(fakeRace)).rejects.toThrow('Pole driver 9999 not found for season season-1 while syncing Australian GP');
-
-        expect(mockRaceResultRepository.upsert).not.toHaveBeenCalled();
-        expect(mockRaceDriverResultRepository.replaceMany).not.toHaveBeenCalled();
-        expect(mockRaceRepository.updateStatus).not.toHaveBeenCalled();
-    });
-
-    it('should throw if winner driver is not found', async () => {
-        const fakeRaceSessionResultsWithUnknownWinnerDriver: DriverSessionResult[] = [
-            {
-                externalDriverNumber: 9999,
-                position: 1,
-                dnf: false,
-            },
-            {
-                externalDriverNumber: 16,
-                position: 2,
-                dnf: false,
-            },
-        ];
-
-        mockOfficialResultsProvider.getSessionResults
-            .mockResolvedValueOnce(fakeRaceSessionResultsWithUnknownWinnerDriver)
-            .mockResolvedValueOnce(fakeQualifyingResults);
-        mockOfficialResultsProvider.hasSafetyCar.mockResolvedValue(false);
-        mockDriverRepository.findByDriverNumbers.mockResolvedValue([
-            {
-                id: 'driver-16',
-                driverNumber: 16,
-                teamId: 'team-ferrari',
-            },
-        ]);
-
-        await expect(useCase.execute(fakeRace)).rejects.toThrow('Race winner driver 9999 not found for season season-1 while syncing Australian GP');
-
-        expect(mockRaceResultRepository.upsert).not.toHaveBeenCalled();
-        expect(mockRaceDriverResultRepository.replaceMany).not.toHaveBeenCalled();
-        expect(mockRaceRepository.updateStatus).not.toHaveBeenCalled();
-    });
-    
-    it('should throw if any race driver is not found', async () => {
-        const fakeRaceSessionResultsWithUnknownDriver: DriverSessionResult[] = [
-            {
-                externalDriverNumber: 1, // ganador
-                position: 1,
-                dnf: false,
-            },
-            {
-                externalDriverNumber: 16, // piloto normal
-                position: 2,
-                dnf: false,
-            },
-            {
-                externalDriverNumber: 9999, // este no existe en DB
-                position: 3,
-                dnf: false,
-            },
-        ];
-
-        const fakeQualifyingResults = [
-            {
-                externalDriverNumber: 16,
-                position: 1,
-                dnf: false,
-            },
-        ];
-
-        mockOfficialResultsProvider.getSessionResults
-            .mockResolvedValueOnce(fakeRaceSessionResultsWithUnknownDriver)
-            .mockResolvedValueOnce(fakeQualifyingResults);
-        mockOfficialResultsProvider.hasSafetyCar.mockResolvedValue(false);
-
-        mockDriverRepository.findByDriverNumbers.mockResolvedValue([
-            {
-                id: 'driver-1',
-                driverNumber: 1,
-                teamId: 'team-1',
-            },
-            {
-                id: 'driver-16',
-                driverNumber: 16,
-                teamId: 'team-2',
-            },
-        ]);
-    
-
-        await expect(useCase.execute(fakeRace)).rejects.toThrow('Driver 9999 not found for season season-1 while syncing Australian GP');
-
-        expect(mockRaceResultRepository.upsert).not.toHaveBeenCalled();
-        expect(mockRaceDriverResultRepository.replaceMany).not.toHaveBeenCalled();
-        expect(mockRaceRepository.updateStatus).not.toHaveBeenCalled();
+        expect(mockSyncRaceEntries.execute).not.toHaveBeenCalled();
+        expectNothingSaved();
     });
 })

@@ -25,6 +25,7 @@ const mockOfficialResultsProvider: jest.Mocked<OfficialResultsProvider> = {
     getMeetings: jest.fn(),
     getSessionResults: jest.fn(),
     getDrivers: jest.fn(),
+    getLatestStartedSessionKey: jest.fn(),
     hasRaceResults: jest.fn(),
     hasSafetyCar: jest.fn(),
 }

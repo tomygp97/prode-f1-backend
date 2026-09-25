@@ -41,13 +41,16 @@ model Team {
   colour   String
   seasonId String @map("season_id")
 
-  season  Season   @relation(fields: [seasonId], references: [id])
-  drivers Driver[]
+  season      Season      @relation(fields: [seasonId], references: [id])
+  drivers     Driver[]
+  raceEntries RaceEntry[]
 
   @@unique([name, seasonId])
   @@map("teams")
 }
 
+// Plantel de la temporada: crece con los reemplazos y nunca se borra (un id por piloto).
+// teamId es el equipo ACTUAL; el de cada carrera está en RaceEntry / RaceDriverResult.
 model Driver {
   id           String @id @default(uuid())
   name         String
@@ -59,7 +62,8 @@ model Driver {
   season Season @relation(fields: [seasonId], references: [id])
   team   Team   @relation(fields: [teamId], references: [id])
 
-  leaguesTracking League[] @relation("TrackedDriver")
+  leaguesTracking League[]    @relation("TrackedDriver")
+  raceEntries     RaceEntry[]
 
   @@unique([driverNumber, seasonId])
   @@map("drivers")
@@ -146,6 +150,7 @@ model Race {
   predictions   Prediction[]
   raceResult    RaceResult?
   driverResults RaceDriverResult[]
+  entries       RaceEntry[]
 
   @@map("races")
 }
@@ -200,6 +205,7 @@ model RaceDriverResult {
   id       String   @id @default(uuid())
   raceId   String   @map("race_id")
   driverId String   @map("driver_id")
+  teamId   String   @map("team_id") // equipo con el que corrió esta carrera
   position Int?
   dnf      Boolean  @default(false)
 
@@ -207,6 +213,21 @@ model RaceDriverResult {
 
   @@unique([raceId, driverId])
   @@map("race_driver_results")
+}
+
+// Grilla de cada carrera: quién corre y con qué equipo en ese momento.
+model RaceEntry {
+  id       String @id @default(uuid())
+  raceId   String @map("race_id")
+  driverId String @map("driver_id")
+  teamId   String @map("team_id")
+
+  race   Race   @relation(fields: [raceId], references: [id])
+  driver Driver @relation(fields: [driverId], references: [id])
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  @@unique([raceId, driverId])
+  @@map("race_entries")
 }
 
 model ScoringRule {

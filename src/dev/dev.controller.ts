@@ -2,7 +2,9 @@ import { BadRequestException, Controller, Get, NotFoundException, Param, Query }
 import { SyncCalendarUseCase } from '../application/sync-races/sync-calendar.use-case';
 import { UpdateRaceStatusUseCase } from '../application/sync-races/update-race-statuses.use-case';
 import { PrismaService } from "../infrastructure/database/prisma/prisma.service";
-import { SyncDriversUseCase } from "../application/sync-races/sync-drivers.use-case";
+import { SyncRaceEntriesUseCase } from "../application/sync-races/sync-race-entries.use-case";
+import { SyncUpcomingGridUseCase } from "../application/sync-races/sync-upcoming-grid.use-case";
+import { OfficialResultsProvider } from "../domain/ports/official-results.provider";
 import { SyncRaceResultsUseCase } from "../application/sync-races/sync-race-results.use-case";
 import { RaceRepository } from "../domain/ports/race.repository";
 import { RaceStatus } from "../domain/enums/race-status.enum";
@@ -22,7 +24,9 @@ export class DevController {
     constructor(
         private readonly syncCalendarUseCase: SyncCalendarUseCase,
         private readonly updateRaceStatusUseCase: UpdateRaceStatusUseCase,
-        private readonly syncDriversUseCase: SyncDriversUseCase,
+        private readonly syncRaceEntriesUseCase: SyncRaceEntriesUseCase,
+        private readonly syncUpcomingGridUseCase: SyncUpcomingGridUseCase,
+        private readonly officialResultsProvider: OfficialResultsProvider,
         private readonly syncRaceResultsUseCase: SyncRaceResultsUseCase,
         private readonly syncAllRaceResultsUseCase: SyncAllRaceResultsUseCase,
         private readonly calculateAllPendingScores: CalculateAllPendingScoresUseCase,
@@ -60,29 +64,31 @@ export class DevController {
         };
     }
 
-    // Sin ?sessionKey usa la última carrera ya corrida: si se usara una vieja, faltarían
-    // los pilotos que entraron a mitad de temporada y fallaría el sync de resultados.
-    @Get('sync-drivers')
-    async syncDrivers(@Query('sessionKey') sessionKeyParam?: string) {
-        let sessionKey = sessionKeyParam ? Number(sessionKeyParam) : null;
-
-        if (!sessionKey) {
-            const lastRace = await this.prisma.race.findFirst({
-                where: {
-                    seasonId: SEASON_ID,
-                    raceStartAt: { lte: new Date() },
-                    raceSessionKey: { not: null },
-                },
-                orderBy: { raceStartAt: 'desc' },
-            });
-            if (!lastRace?.raceSessionKey) {
-                throw new BadRequestException('No past race with a session key: run /dev/sync-calendar first or pass ?sessionKey=');
-            }
-            sessionKey = lastRace.raceSessionKey;
+    // Sin ?raceId: lo mismo que SyncUpcomingGridJob (grilla del próximo GP; en base vacía,
+    // carga el plantel). Con ?raceId: grilla de esa carrera desde su sesión de carrera si ya
+    // se corrió, o desde la última sesión empezada de su fin de semana. No pisa equipos actuales.
+    @Get('sync-entries')
+    async syncEntries(@Query('raceId') raceId?: string) {
+        if (!raceId) {
+            return this.syncUpcomingGridUseCase.execute();
         }
 
-        await this.syncDriversUseCase.execute(sessionKey, SEASON_ID);
-        return { message: `Drivers synced from session ${sessionKey}` };
+        const race = await this.raceRepository.findById(raceId);
+        if (!race) {
+            throw new NotFoundException(`Race ${raceId} not found`);
+        }
+
+        const raceAlreadyRun = race.raceStartAt !== null && race.raceStartAt <= new Date();
+        const sessionKey = raceAlreadyRun && race.raceSessionKey
+            ? race.raceSessionKey
+            : await this.officialResultsProvider.getLatestStartedSessionKey({ meetingKey: race.meetingKey });
+
+        if (!sessionKey) {
+            throw new BadRequestException(`No session of ${race.name} has started yet`);
+        }
+
+        const drivers = await this.syncRaceEntriesUseCase.execute(race, sessionKey, { updateCurrentTeam: false });
+        return { message: `Grid of ${race.name} synced from session ${sessionKey}`, drivers };
     }
 
     @Get('sync-race-results/:raceId')
