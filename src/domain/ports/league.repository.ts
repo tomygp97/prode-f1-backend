@@ -21,4 +21,9 @@ export abstract class LeagueRepository {
   abstract findPublicLeaguesWithMemberCount(): Promise<PublicLeagueWithMemberCount[]>;
   abstract createWithOwner(league: League, ownerMember: LeagueMember): Promise<void>;
   abstract transferOwnership(league: League, previousAdmin: LeagueMember, newAdmin: LeagueMember): Promise<void>;
+  /**
+   * En una transacción: marca la salida del admin (como `member`) y le pasa la liga a
+   * `successor`. Sin sucesor (era el único miembro) la liga se da de baja (deletedAt).
+   */
+  abstract leaveAsAdmin(departingAdmin: LeagueMember, successor: LeagueMember | null): Promise<void>;
 }

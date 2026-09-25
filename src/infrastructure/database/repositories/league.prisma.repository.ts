@@ -20,13 +20,14 @@ export class LeaguePrismaRepository implements LeagueRepository {
     });
   }
 
+  // Las ligas dadas de baja (deletedAt) no existen para la app
   async findById(id: string): Promise<League | null> {
-    const raw = await this.prisma.league.findUnique({ where: { id } });
+    const raw = await this.prisma.league.findFirst({ where: { id, deletedAt: null } });
     return raw ? LeagueMapper.toDomain(raw) : null;
   }
 
   async findByInviteCode(inviteCode: string): Promise<League | null> {
-    const raw = await this.prisma.league.findUnique({ where: { inviteCode } });
+    const raw = await this.prisma.league.findFirst({ where: { inviteCode, deletedAt: null } });
     return raw ? LeagueMapper.toDomain(raw) : null;
   }
 
@@ -71,6 +72,24 @@ async transferOwnership(
     await tx.league.update({ where: { id: league.id }, data: { ownerId: leagueData.ownerId } });
     await tx.leagueMember.update({ where: { id: previousAdmin.id }, data: { role: previousAdminData.role } });
     await tx.leagueMember.update({ where: { id: newAdmin.id }, data: { role: newAdminData.role } });
+  });
+}
+
+async leaveAsAdmin(departingAdmin: LeagueMember, successor: LeagueMember | null): Promise<void> {
+  const leagueId = departingAdmin.leagueId;
+
+  await this.prisma.$transaction(async (tx) => {
+    await tx.leagueMember.update({
+      where: { id: departingAdmin.id },
+      data: { role: departingAdmin.role, leftAt: departingAdmin.leftAt },
+    });
+
+    if (successor) {
+      await tx.league.update({ where: { id: leagueId }, data: { ownerId: successor.userId } });
+      await tx.leagueMember.update({ where: { id: successor.id }, data: { role: successor.role } });
+    } else {
+      await tx.league.update({ where: { id: leagueId }, data: { deletedAt: new Date() } });
+    }
   });
 }
 

@@ -1,4 +1,5 @@
 import { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
+import { LeagueRepository } from '../../../domain/ports/league.repository';
 import { LeagueMember } from '../../../domain/entities/league-member.entity';
 import { LeaveLeagueUseCase } from './leave-league.use-case';
 
@@ -9,11 +10,21 @@ const mockMemberRepository: jest.Mocked<LeagueMemberRepository> = {
     findActiveLeaguesByUser: jest.fn(),
 };
 
+const mockLeagueRepository: jest.Mocked<LeagueRepository> = {
+    save: jest.fn(),
+    findById: jest.fn(),
+    findByInviteCode: jest.fn(),
+    findPublicLeaguesWithMemberCount: jest.fn(),
+    createWithOwner: jest.fn(),
+    transferOwnership: jest.fn(),
+    leaveAsAdmin: jest.fn(),
+};
+
 describe('LeaveLeagueUseCase', () => {
     let useCase: LeaveLeagueUseCase;
 
     beforeEach(() => {
-        useCase = new LeaveLeagueUseCase(mockMemberRepository);
+        useCase = new LeaveLeagueUseCase(mockMemberRepository, mockLeagueRepository);
         jest.clearAllMocks();
     });
 
@@ -64,20 +75,51 @@ describe('LeaveLeagueUseCase', () => {
         expect(mockMemberRepository.save).not.toHaveBeenCalled();
     });
 
-    it('should throw if the admin tries to leave', async () => {
-        mockMemberRepository.findByLeagueAndUser.mockResolvedValue(
-            LeagueMember.create({
-                id: 'member-1',
-                leagueId: 'league-1',
-                userId: 'owner-1',
-                role: 'admin',
-            })
-        );
+    describe('when the admin leaves', () => {
+        const admin = LeagueMember.create({
+            id: 'member-admin', leagueId: 'league-1', userId: 'owner-1', role: 'admin',
+            joinedAt: new Date('2026-01-01'),
+        });
+        const member = (userId: string, joinedAt: string) => LeagueMember.create({
+            id: `member-${userId}`, leagueId: 'league-1', userId, role: 'member', joinedAt: new Date(joinedAt),
+        });
 
-        await expect(
-            useCase.execute({ leagueId: 'league-1', userId: 'owner-1' })
-        ).rejects.toThrow('League admin cannot leave. Transfer ownership first.');
+        beforeEach(() => {
+            mockMemberRepository.findByLeagueAndUser.mockResolvedValue(admin);
+        });
 
-        expect(mockMemberRepository.save).not.toHaveBeenCalled();
+        it('should hand the league over to the oldest active member', async () => {
+            mockMemberRepository.findActiveMembersByLeague.mockResolvedValue([
+                admin,
+                member('newer', '2026-05-01'),
+                member('oldest', '2026-02-01'),
+            ]);
+
+            const result = await useCase.execute({ leagueId: 'league-1', userId: 'owner-1' });
+
+            expect(result).toEqual({ newAdminUserId: 'oldest', leagueDeleted: false });
+            const [departing, successor] = mockLeagueRepository.leaveAsAdmin.mock.calls[0];
+            expect(successor).toMatchObject({ userId: 'oldest', role: 'admin' });
+            expect(departing.leftAt).not.toBeNull();
+            expect(mockMemberRepository.save).not.toHaveBeenCalled(); // todo va en la transacción
+        });
+
+        it('should leave as a regular member, so rejoining does not bring the admin role back', async () => {
+            mockMemberRepository.findActiveMembersByLeague.mockResolvedValue([admin, member('other', '2026-02-01')]);
+
+            await useCase.execute({ leagueId: 'league-1', userId: 'owner-1' });
+
+            const [departing] = mockLeagueRepository.leaveAsAdmin.mock.calls[0];
+            expect(departing).toMatchObject({ id: 'member-admin', role: 'member' });
+        });
+
+        it('should delete the league when the admin is the only member', async () => {
+            mockMemberRepository.findActiveMembersByLeague.mockResolvedValue([admin]);
+
+            const result = await useCase.execute({ leagueId: 'league-1', userId: 'owner-1' });
+
+            expect(result).toEqual({ newAdminUserId: null, leagueDeleted: true });
+            expect(mockLeagueRepository.leaveAsAdmin.mock.calls[0][1]).toBeNull();
+        });
     });
 });

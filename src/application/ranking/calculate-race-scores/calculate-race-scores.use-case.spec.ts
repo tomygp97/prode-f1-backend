@@ -38,6 +38,7 @@ const mockLeagueRepo: jest.Mocked<LeagueRepository> = {
     findPublicLeaguesWithMemberCount: jest.fn(),
     createWithOwner: jest.fn(),
     transferOwnership: jest.fn(),
+    leaveAsAdmin: jest.fn(),
 };
 
 const mockRaceRepo: jest.Mocked<RaceRepository> = {
