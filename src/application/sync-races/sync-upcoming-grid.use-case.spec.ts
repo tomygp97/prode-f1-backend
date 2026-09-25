@@ -65,6 +65,18 @@ describe('SyncUpcomingGridUseCase', () => {
         expect(mockOfficialResultsProvider.getLatestStartedSessionKey).toHaveBeenCalledWith({ meetingKey: 1308 });
     });
 
+    it('should ignore past races still SCHEDULED (fresh calendar, statuses not updated yet)', async () => {
+        mockRaceRepository.findAll.mockResolvedValue([
+            race('australia', RaceStatus.SCHEDULED, '2026-03-08T04:00:00Z', 1279),
+            race('baku', RaceStatus.SCHEDULED, '2026-09-26T11:00:00Z', 1295),
+        ]);
+        mockOfficialResultsProvider.getLatestStartedSessionKey.mockResolvedValue(11373);
+
+        await useCase.execute(NOW);
+
+        expect(mockOfficialResultsProvider.getLatestStartedSessionKey).toHaveBeenCalledWith({ meetingKey: 1295 });
+    });
+
     it('should do nothing when the weekend has not started and the roster already exists', async () => {
         mockRaceRepository.findAll.mockResolvedValue([race('bahrain', RaceStatus.SCHEDULED, '2026-10-04T07:00:00Z', 1308)]);
         mockOfficialResultsProvider.getLatestStartedSessionKey.mockResolvedValue(null);

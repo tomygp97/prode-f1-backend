@@ -1,20 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { SyncCalendarUseCase } from '../../application/sync-races/sync-calendar.use-case';
+import { SyncSeasonCalendarUseCase } from '../../application/sync-races/sync-season-calendar.use-case';
 
-// Solo calendario. La grilla y el plantel los mantiene SyncUpcomingGridJob.
+// Solo calendario de la temporada del año actual. La grilla y el plantel los mantiene SyncUpcomingGridJob.
 @Injectable()
 export class SyncCalendarJob {
     private readonly logger = new Logger(SyncCalendarJob.name);
 
-    constructor(private readonly syncCalendarUseCase: SyncCalendarUseCase) {}
+    constructor(private readonly syncSeasonCalendar: SyncSeasonCalendarUseCase) {}
 
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
     async handle() {
-        // Hardcodeado por el momento
-        const seasonId = 'c280d7b8-7a5e-11f1-883d-563f2351353a';
         try {
-            await this.syncCalendarUseCase.execute(2026, seasonId);
+            await this.syncSeasonCalendar.execute();
         } catch (error) {
             this.logger.error('Calendar synchronization failed', error);
         }

@@ -64,13 +64,12 @@ export class SyncUpcomingGridUseCase {
     }
 
     private findUpcomingRace(races: Race[], now: Date): Race | null {
+        // Se mira la fecha y no solo el estado: recién sincronizado el calendario (base nueva)
+        // todas las carreras están SCHEDULED hasta que corre UpdateRaceStatusJob.
         const candidates = races
             .filter((race) => race.raceStartAt !== null)
-            .filter((race) =>
-                race.status === RaceStatus.SCHEDULED ||
-                (race.status === RaceStatus.LOCKED &&
-                    race.raceStartAt!.getTime() + LOCKED_GRACE_MS >= now.getTime()),
-            )
+            .filter((race) => race.status === RaceStatus.SCHEDULED || race.status === RaceStatus.LOCKED)
+            .filter((race) => race.raceStartAt!.getTime() + LOCKED_GRACE_MS >= now.getTime())
             .sort((a, b) => a.raceStartAt!.getTime() - b.raceStartAt!.getTime());
 
         return candidates[0] ?? null;

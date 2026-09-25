@@ -1,7 +1,7 @@
 import { BadRequestException, Controller, Get, NotFoundException, Param, Query } from "@nestjs/common";
-import { SyncCalendarUseCase } from '../application/sync-races/sync-calendar.use-case';
+import { SyncSeasonCalendarUseCase } from '../application/sync-races/sync-season-calendar.use-case';
+import { SeasonRepository } from '../domain/ports/season.repository';
 import { UpdateRaceStatusUseCase } from '../application/sync-races/update-race-statuses.use-case';
-import { PrismaService } from "../infrastructure/database/prisma/prisma.service";
 import { SyncRaceEntriesUseCase } from "../application/sync-races/sync-race-entries.use-case";
 import { SyncUpcomingGridUseCase } from "../application/sync-races/sync-upcoming-grid.use-case";
 import { OfficialResultsProvider } from "../domain/ports/official-results.provider";
@@ -11,9 +11,11 @@ import { RaceStatus } from "../domain/enums/race-status.enum";
 import { SyncAllRaceResultsUseCase } from "../application/sync-races/sync-all-race-results.use-case";
 import { CalculateAllPendingScoresUseCase } from "../application/ranking/calculate-all-pending-scores/calculate-all-pending-scores.use-case";
 
-// Hardcodeado por el momento, igual que en SyncCalendarJob
-const SEASON_YEAR = 2026;
-const SEASON_ID = 'c280d7b8-7a5e-11f1-883d-563f2351353a';
+// ?year= opcional (por defecto el año actual)
+function parseYear(year?: string): number {
+    const parsed = Number(year);
+    return Number.isInteger(parsed) && parsed > 2000 ? parsed : new Date().getUTCFullYear();
+}
 
 /**
  * Endpoints para correr a mano los cron jobs en desarrollo. No tienen auth:
@@ -22,7 +24,8 @@ const SEASON_ID = 'c280d7b8-7a5e-11f1-883d-563f2351353a';
 @Controller('dev')
 export class DevController {
     constructor(
-        private readonly syncCalendarUseCase: SyncCalendarUseCase,
+        private readonly seasonRepository: SeasonRepository,
+        private readonly syncSeasonCalendarUseCase: SyncSeasonCalendarUseCase,
         private readonly updateRaceStatusUseCase: UpdateRaceStatusUseCase,
         private readonly syncRaceEntriesUseCase: SyncRaceEntriesUseCase,
         private readonly syncUpcomingGridUseCase: SyncUpcomingGridUseCase,
@@ -31,27 +34,21 @@ export class DevController {
         private readonly syncAllRaceResultsUseCase: SyncAllRaceResultsUseCase,
         private readonly calculateAllPendingScores: CalculateAllPendingScoresUseCase,
         private readonly raceRepository: RaceRepository,
-        private readonly prisma: PrismaService,
     ) {}
 
-    // 1. Crear una season primero
+    // Ya no hace falta antes de sync-calendar (la crea sola); queda por compatibilidad
     @Get('create-season')
-    async createSeason() {
-        const season = await this.prisma.season.upsert({
-            where: { id: SEASON_ID },
-            update: {},
-            create: { id: SEASON_ID, year: SEASON_YEAR },
-        });
-
-        return season;
+    async createSeason(@Query('year') year?: string) {
+        return this.seasonRepository.ensureForYear(parseYear(year));
     }
 
+    // Crea la season si no existe y sincroniza su calendario
     @Get('sync-calendar')
-    async syncCalendar() {
-        await this.syncCalendarUseCase.execute(SEASON_YEAR, SEASON_ID);
+    async syncCalendar(@Query('year') year?: string) {
+        const { season, races } = await this.syncSeasonCalendarUseCase.execute(parseYear(year));
 
         return {
-            message: 'Calendar synced successfully',
+            message: `Calendar ${season.year} synced: ${races} races`,
         };
     }
 
