@@ -39,12 +39,16 @@ import { LeagueRankingPrismaRepository } from '../database/repositories/league-r
 import { LeagueRepository } from '../../domain/ports/league.repository';
 import { LeaguePrismaRepository } from '../database/repositories/league.prisma.repository';
 
+// Los endpoints /dev no tienen auth: solo se exponen con opt-in explícito.
+// main.ts carga dotenv antes de importar AppModule, así que la variable ya está disponible acá.
+const devControllers = process.env.ENABLE_DEV_TOOLS === 'true' ? [DevController] : [];
+
 @Module({
     imports: [
       DatabaseModule,
       ScheduleModule.forRoot(),
     ],
-    controllers: [RaceController, DevController],
+    controllers: [RaceController, ...devControllers],
     providers: [
       SyncCalendarJob,
       SyncCalendarUseCase,
