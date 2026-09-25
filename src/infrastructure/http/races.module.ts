@@ -5,6 +5,11 @@ import { SyncCalendarUseCase } from '../../application/sync-races/sync-calendar.
 import { SyncRaceEntriesUseCase } from '../../application/sync-races/sync-race-entries.use-case';
 import { SyncUpcomingGridUseCase } from '../../application/sync-races/sync-upcoming-grid.use-case';
 import { SyncUpcomingGridJob } from '../jobs/sync-upcoming-grid.job';
+import { SyncSeasonCalendarUseCase } from '../../application/sync-races/sync-season-calendar.use-case';
+import { ColdStartSyncUseCase } from '../../application/sync-races/cold-start-sync.use-case';
+import { ColdStartSyncService } from '../jobs/cold-start-sync.service';
+import { SeasonRepository } from '../../domain/ports/season.repository';
+import { SeasonPrismaRepository } from '../database/repositories/season.prisma.repository';
 import { GetRaceEntriesUseCase } from '../../application/races/get-race-entries/get-race-entries.use-case';
 import { RaceEntryRepository } from '../../domain/ports/race-entry.repository';
 import { RaceEntryPrismaRepository } from '../database/repositories/race-entry.prisma.repository';
@@ -62,6 +67,9 @@ const devControllers = process.env.ENABLE_DEV_TOOLS === 'true' ? [DevController]
       SyncRaceEntriesUseCase,
       SyncUpcomingGridUseCase,
       SyncUpcomingGridJob,
+      SyncSeasonCalendarUseCase,
+      ColdStartSyncUseCase,
+      ColdStartSyncService,
       GetRaceEntriesUseCase,
       SyncRaceResultsUseCase,
       SyncAllRaceResultsUseCase,
@@ -84,6 +92,7 @@ const devControllers = process.env.ENABLE_DEV_TOOLS === 'true' ? [DevController]
       { provide: RaceResultRepository, useClass: RaceResultPrismaRepository },
       { provide: RaceDriverResultRepository, useClass: RaceDriverResultPrismaRepository },
       { provide: RaceEntryRepository, useClass: RaceEntryPrismaRepository },
+      { provide: SeasonRepository, useClass: SeasonPrismaRepository },
       { provide: RaceRepository, useClass: RacePrismaRepository },
     ],
     exports: [RaceRepository, RaceResultRepository, RaceDriverResultRepository, RaceEntryRepository],

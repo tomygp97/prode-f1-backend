@@ -35,8 +35,20 @@ export class RacePrismaRepository implements RaceRepository {
                 raceStartAt: meeting.raceStartAt,
                 raceSessionKey: meeting.raceSessionKey,
                 qualifyingSessionKey: meeting.qualifyingSessionKey,
-            },    
+            },
         });
+
+        // Una carrera que se cancela después de sincronizada tiene que dejar de estar abierta
+        // (si no, se bloquea en la qualy y nunca termina). Si ya tiene resultados no se toca.
+        if (meeting.isCancelled) {
+            await this.prisma.race.updateMany({
+                where: {
+                    meetingKey: meeting.meetingKey,
+                    status: { in: [PrismaRaceStatus.SCHEDULED, PrismaRaceStatus.LOCKED] },
+                },
+                data: { status: PrismaRaceStatus.CANCELLED },
+            });
+        }
     };
 
     async findById(id: string): Promise<Race | null> {

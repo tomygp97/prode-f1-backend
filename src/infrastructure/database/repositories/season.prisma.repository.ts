@@ -12,4 +12,13 @@ export class SeasonPrismaRepository implements SeasonRepository {
     const raw = await this.prisma.season.findUnique({ where: { year } });
     return raw ? SeasonMapper.toDomain(raw) : null;
   }
+
+  async ensureForYear(year: number): Promise<Season> {
+    const raw = await this.prisma.season.upsert({
+      where: { year },
+      update: {},
+      create: { year },
+    });
+    return SeasonMapper.toDomain(raw);
+  }
 }
