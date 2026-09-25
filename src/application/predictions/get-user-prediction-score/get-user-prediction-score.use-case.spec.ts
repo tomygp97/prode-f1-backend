@@ -14,6 +14,7 @@ const mockPredictionRepository: jest.Mocked<PredictionRepository> = {
 const mockScoreRepository: jest.Mocked<PredictionScoreRepository> = {
     save: jest.fn(),
     findByPredictionId: jest.fn(),
+    findAllByLeague: jest.fn(),
 };
 
 const fakePrediction = Prediction.create({

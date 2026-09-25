@@ -15,6 +15,8 @@ import { LeagueRankingRepository } from '../../domain/ports/league-ranking.repos
 import { LeagueRankingPrismaRepository } from '../database/repositories/league-ranking.prisma.repository';
 import { PredictionScoreRepository } from '../../domain/ports/prediction-score.repository';
 import { PredictionScorePrismaRepository } from '../database/repositories/prediction-score.prisma.repository';
+import { UserRepository } from '../../domain/ports/user.repository';
+import { UserPrismaRepository } from '../database/repositories/user.prisma.repository';
 
 import { CalculateScoresJob } from '../jobs/calculate-scores.job';
 
@@ -28,6 +30,7 @@ import { CalculateScoresJob } from '../jobs/calculate-scores.job';
     CalculateScoresJob,
     { provide: LeagueRankingRepository, useClass: LeagueRankingPrismaRepository },
     { provide: PredictionScoreRepository, useClass: PredictionScorePrismaRepository },
+    { provide: UserRepository, useClass: UserPrismaRepository },
   ],
 })
 export class RankingModule {}
