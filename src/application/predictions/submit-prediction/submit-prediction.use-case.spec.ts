@@ -62,6 +62,9 @@ const gridOf = (...driverIds: string[]): RaceGridEntryView[] => driverIds.map((d
     team: { id: 'team-1', name: 'Team', colour: 'FFFFFF' },
 }));
 
+// Qualy en el futuro: los tests que no pasan la hora usan el reloj real y la carrera sigue abierta
+const QUALY_START = new Date('2099-10-03T08:00:00Z');
+
 describe('SubmitPredictionUseCase', () => {
     let useCase: SubmitPredictionUseCase;
 
@@ -72,7 +75,7 @@ describe('SubmitPredictionUseCase', () => {
 
     const scheduledRace = () => Race.create({
         id: 'race-1', seasonId: 'season-1', name: 'GP Test', circuit: 'Circuit', country: 'Country',
-        round: 1, qualifyingStartAt: new Date('2026-08-01'), raceStartAt: new Date('2026-08-02'),
+        round: 1, qualifyingStartAt: QUALY_START, raceStartAt: new Date('2026-10-04T07:00:00Z'),
         status: RaceStatus.SCHEDULED, meetingKey: 1, raceSessionKey: null, qualifyingSessionKey: null,
     });
 
@@ -200,6 +203,24 @@ describe('SubmitPredictionUseCase', () => {
         await expect(
             useCase.execute({ leagueId: 'league-1', raceId: 'race-1', userId: 'user-1', predictedOrder: ['d1', 'd2', 'd3'], predictedPoleDriverId: 'd1', safetyCar: true, dnfCount: 0 })
         ).rejects.toThrow('Predictions are closed for this race');
+    });
+
+    // El cierre depende de la hora de la qualy, no de que el cron ya la haya pasado a LOCKED
+    it('should close predictions as soon as qualifying starts, even while the race is still SCHEDULED', async () => {
+        givenValidLeagueAndRace();
+
+        await expect(
+            useCase.execute(validInput, new Date(QUALY_START.getTime() + 60_000)),
+        ).rejects.toThrow('Predictions are closed for this race');
+        expect(mockPredictionRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('should accept predictions right before qualifying starts', async () => {
+        givenValidLeagueAndRace();
+
+        await useCase.execute(validInput, new Date(QUALY_START.getTime() - 60_000));
+
+        expect(mockPredictionRepo.save).toHaveBeenCalledTimes(1);
     });
 
     it('should throw if predictedOrder length does not match league predictionSlots', async () => {

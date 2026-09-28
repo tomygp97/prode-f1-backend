@@ -5,7 +5,6 @@ import { PredictionRepository } from '../../../domain/ports/prediction.repositor
 import { LeagueRepository } from '../../../domain/ports/league.repository';
 import { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
 import { RaceRepository } from '../../../domain/ports/race.repository';
-import { RaceStatus } from '../../../domain/enums/race-status.enum';
 import { RaceEntryRepository } from '../../../domain/ports/race-entry.repository';
 
 @Injectable()
@@ -27,7 +26,7 @@ export class SubmitPredictionUseCase {
     trackedDriverPosition?: number | null;
     safetyCar: boolean;
     dnfCount: number;
-  }): Promise<Prediction> {
+  }, now: Date = new Date()): Promise<Prediction> {
     const league = await this.leagueRepo.findById(input.leagueId);
     if (!league) {
       throw new NotFoundException('League not found');
@@ -43,7 +42,7 @@ export class SubmitPredictionUseCase {
       throw new NotFoundException('Race not found');
     }
 
-    if (race.status !== RaceStatus.SCHEDULED) {
+    if (!race.arePredictionsOpen(now)) {
       throw new BadRequestException('Predictions are closed for this race');
     }
 
