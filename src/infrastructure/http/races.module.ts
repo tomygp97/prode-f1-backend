@@ -8,6 +8,7 @@ import { SyncUpcomingGridJob } from '../jobs/sync-upcoming-grid.job';
 import { SyncSeasonCalendarUseCase } from '../../application/sync-races/sync-season-calendar.use-case';
 import { ColdStartSyncUseCase } from '../../application/sync-races/cold-start-sync.use-case';
 import { ColdStartSyncService } from '../jobs/cold-start-sync.service';
+import { ProcessFinishedRaceUseCase } from '../../application/sync-races/process-finished-race.use-case';
 import { SeasonRepository } from '../../domain/ports/season.repository';
 import { SeasonPrismaRepository } from '../database/repositories/season.prisma.repository';
 import { GetRaceEntriesUseCase } from '../../application/races/get-race-entries/get-race-entries.use-case';
@@ -70,6 +71,7 @@ const devControllers = process.env.ENABLE_DEV_TOOLS === 'true' ? [DevController]
       SyncSeasonCalendarUseCase,
       ColdStartSyncUseCase,
       ColdStartSyncService,
+      ProcessFinishedRaceUseCase,
       GetRaceEntriesUseCase,
       SyncRaceResultsUseCase,
       SyncAllRaceResultsUseCase,

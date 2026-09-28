@@ -123,7 +123,9 @@ describe('UpdateRaceStatusUseCase', () => {
         mockRaceRepository.findLockedRacesWithPastStartTime.mockResolvedValue([fakeRaces[1]]);
         mockOfficialResultsProvider.hasRaceResults.mockResolvedValue(true);
 
-        await useCase.execute();
+        const finished = await useCase.execute();
+
+        expect(finished).toEqual(['race-2']); // para procesarla en el momento
 
         expect(mockRaceRepository.updateStatus).toHaveBeenCalledTimes(1);
         expect(mockRaceRepository.updateStatus).toHaveBeenNthCalledWith(
@@ -140,7 +142,7 @@ describe('UpdateRaceStatusUseCase', () => {
         mockRaceRepository.findLockedRacesWithPastStartTime.mockResolvedValue([fakeRaces[2]]);
         mockOfficialResultsProvider.hasRaceResults.mockResolvedValue(false);
 
-        await useCase.execute();
+        await expect(useCase.execute()).resolves.toEqual([]);
 
         expect(mockRaceRepository.updateStatus).not.toHaveBeenCalled();
         expect(mockOfficialResultsProvider.hasRaceResults).toHaveBeenCalledWith(fakeRaces[2].raceSessionKey);

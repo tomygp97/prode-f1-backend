@@ -60,4 +60,13 @@ export class Race {
     hasScoresCalculated(): boolean {
         return this.scoresCalculatedAt !== null;
     }
+
+    /**
+     * Se puede predecir hasta que empieza la qualy. Se mira la hora además del estado:
+     * el paso a LOCKED lo hace un cron (cada 2 min) y no puede quedar una ventana abierta.
+     */
+    arePredictionsOpen(now: Date = new Date()): boolean {
+        if (this.status !== RaceStatus.SCHEDULED) return false;
+        return this.qualifyingStartAt === null || this.qualifyingStartAt.getTime() > now.getTime();
+    }
 }
