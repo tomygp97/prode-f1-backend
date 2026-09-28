@@ -8,6 +8,7 @@ import { RaceResultDto } from "../dtos/race-result.dto";
 import { RaceDriverResultDto } from "../dtos/race-driver-result.dto";
 import { GetLastResultsSyncedRaceUseCase } from "../../../application/races/get-last-results-synced-race/get-last-results-synced-race.use-case";
 import { GetRaceEntriesUseCase } from "../../../application/races/get-race-entries/get-race-entries.use-case";
+import { GetCurrentRaceUseCase } from "../../../application/races/get-current-race/get-current-race.use-case";
 
 
 @Controller('races')
@@ -19,6 +20,7 @@ export class RaceController {
         private readonly getRaceResultsUseCase: GetRaceResultsUseCase,
         private readonly getLastResultsSyncedRaceUseCase: GetLastResultsSyncedRaceUseCase,
         private readonly getRaceEntriesUseCase: GetRaceEntriesUseCase,
+        private readonly getCurrentRaceUseCase: GetCurrentRaceUseCase,
     ) {}
 
     @Get()
@@ -29,6 +31,12 @@ export class RaceController {
     @Get('next')
     async getNextRace() {
         return this.getNextRaceUseCase.execute();
+    }
+
+    // Fin de semana en curso (predicciones cerradas, todavía sin resultados); null si no hay
+    @Get('current')
+    async getCurrentRace() {
+        return this.getCurrentRaceUseCase.execute();
     }
 
     @Get("last-results-synced")
