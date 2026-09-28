@@ -12,8 +12,10 @@ export class UpdateRaceStatusUseCase{
         private readonly officialResultsProvider: OfficialResultsProvider,
     ) {}
 
-    async execute(): Promise<void> {
+    /** Devuelve los ids de las carreras que pasaron a FINISHED en esta corrida. */
+    async execute(): Promise<string[]> {
         const now = new Date();
+        const finishedRaceIds: string[] = [];
 
         // 1. scheduled -> locked (qualy ya empezo)
         const toLock = await this.raceRepository.findScheduledBeforeDate(now);
@@ -31,7 +33,10 @@ export class UpdateRaceStatusUseCase{
             if (hasResults) {
                 await this.raceRepository.updateStatus(race.id, RaceStatus.FINISHED);
                 this.logger.log(`Race ${race.name} finished`);
+                finishedRaceIds.push(race.id);
             }
         }
+
+        return finishedRaceIds;
     }
 }
