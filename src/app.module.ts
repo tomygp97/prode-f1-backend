@@ -7,8 +7,10 @@ import { RankingModule } from './infrastructure/http/ranking.module';
 import { SeasonsModule } from './infrastructure/http/seasons.module';
 import { TeamsModule } from './infrastructure/http/teams.module';
 import { DriversModule } from './infrastructure/http/drivers.module';
+import { HealthController } from './infrastructure/http/controllers/health.controller';
 
 @Module({
   imports: [AuthModule, LeaguesModule, RacesModule, PredictionsModule, RankingModule, SeasonsModule, TeamsModule, DriversModule],
+  controllers: [HealthController],
 })
 export class AppModule {}
