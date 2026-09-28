@@ -12,6 +12,7 @@ import { ProcessFinishedRaceUseCase } from '../../application/sync-races/process
 import { SeasonRepository } from '../../domain/ports/season.repository';
 import { SeasonPrismaRepository } from '../database/repositories/season.prisma.repository';
 import { GetRaceEntriesUseCase } from '../../application/races/get-race-entries/get-race-entries.use-case';
+import { GetCurrentRaceUseCase } from '../../application/races/get-current-race/get-current-race.use-case';
 import { RaceEntryRepository } from '../../domain/ports/race-entry.repository';
 import { RaceEntryPrismaRepository } from '../database/repositories/race-entry.prisma.repository';
 import { UpdateRaceStatusUseCase } from '../../application/sync-races/update-race-statuses.use-case';
@@ -73,6 +74,7 @@ const devControllers = process.env.ENABLE_DEV_TOOLS === 'true' ? [DevController]
       ColdStartSyncService,
       ProcessFinishedRaceUseCase,
       GetRaceEntriesUseCase,
+      GetCurrentRaceUseCase,
       SyncRaceResultsUseCase,
       SyncAllRaceResultsUseCase,
       SyncRaceResultsJob,

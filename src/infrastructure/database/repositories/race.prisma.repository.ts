@@ -87,11 +87,15 @@ export class RacePrismaRepository implements RaceRepository {
         });
     }
 
+    // Próxima carrera con predicciones abiertas: la qualy todavía no empezó (misma regla que
+    // Race.arePredictionsOpen). La que ya empezó la qualy es la "en curso" (/races/current).
     async findNext() {
+        const now = new Date();
         const race = await this.prisma.race.findFirst({
             where: {
                 status: PrismaRaceStatus.SCHEDULED,
-                raceStartAt: { gte: new Date() }
+                raceStartAt: { gte: now },
+                OR: [{ qualifyingStartAt: null }, { qualifyingStartAt: { gt: now } }],
             },
             orderBy: { raceStartAt: 'asc' },
         });
