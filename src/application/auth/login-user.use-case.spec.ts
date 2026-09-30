@@ -7,6 +7,7 @@ const mockUserRepository: jest.Mocked<UserRepository> = {
     save: jest.fn(),
     findByEmail: jest.fn(),
     findById: jest.fn(),
+    findByIds: jest.fn(),
 }
 
 const mockJwtService = {

@@ -1,0 +1,104 @@
+import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
+import { DevController } from '../../dev/dev.controller';
+import { SyncCalendarUseCase } from '../../application/sync-races/sync-calendar.use-case';
+import { SyncRaceEntriesUseCase } from '../../application/sync-races/sync-race-entries.use-case';
+import { SyncUpcomingGridUseCase } from '../../application/sync-races/sync-upcoming-grid.use-case';
+import { SyncUpcomingGridJob } from '../jobs/sync-upcoming-grid.job';
+import { SyncSeasonCalendarUseCase } from '../../application/sync-races/sync-season-calendar.use-case';
+import { ColdStartSyncUseCase } from '../../application/sync-races/cold-start-sync.use-case';
+import { ColdStartSyncService } from '../jobs/cold-start-sync.service';
+import { ProcessFinishedRaceUseCase } from '../../application/sync-races/process-finished-race.use-case';
+import { SeasonRepository } from '../../domain/ports/season.repository';
+import { SeasonPrismaRepository } from '../database/repositories/season.prisma.repository';
+import { GetRaceEntriesUseCase } from '../../application/races/get-race-entries/get-race-entries.use-case';
+import { GetCurrentRaceUseCase } from '../../application/races/get-current-race/get-current-race.use-case';
+import { RaceEntryRepository } from '../../domain/ports/race-entry.repository';
+import { RaceEntryPrismaRepository } from '../database/repositories/race-entry.prisma.repository';
+import { UpdateRaceStatusUseCase } from '../../application/sync-races/update-race-statuses.use-case';
+import { SyncRaceResultsUseCase } from '../../application/sync-races/sync-race-results.use-case';
+import { OfficialResultsProvider } from '../../domain/ports/official-results.provider';
+import { RaceRepository } from '../../domain/ports/race.repository';
+import { OpenF1Adapter } from '../adapters/openf1.adapter';
+import { DatabaseModule } from '../database/database.module';
+import { RacePrismaRepository } from '../database/repositories/race.prisma.repository';
+import { SyncCalendarJob } from '../jobs/sync-calendar.job';
+import { UpdateRaceStatusJob } from '../jobs/update-race-statuses.job';
+import { TeamRepository } from '../../domain/ports/team.repository';
+import { TeamPrismaRepository } from '../database/repositories/team.prisma.repository';
+import { DriverRepository } from '../../domain/ports/driver.repository';
+import { DriverPrismaRepository } from '../database/repositories/driver.prisma.repository';
+import { RaceResultRepository } from '../../domain/ports/race-result.repository';
+import { RaceResultPrismaRepository } from '../database/repositories/race-result.prisma.repository';
+import { RaceDriverResultPrismaRepository } from '../database/repositories/race-driver-result.prisma.repository';
+import { RaceDriverResultRepository } from '../../domain/ports/race-driver-result.repository';
+import { SyncAllRaceResultsUseCase } from '../../application/sync-races/sync-all-race-results.use-case';
+import { SyncRaceResultsJob } from '../jobs/sync-race-results.job';
+import { RaceController } from './controllers/race.controller';
+import { GetRacesUseCase } from '../../application/races/get-races/get-races.use-case';
+import { GetRaceByIdUseCase } from '../../application/races/get-race/get-race-by-id.use-case';
+import { GetNextRaceUseCase } from '../../application/races/get-next-race/get-next-race.use-case';
+import { GetLastResultsSyncedRaceUseCase } from '../../application/races/get-last-results-synced-race/get-last-results-synced-race.use-case';
+import { GetRaceResultsUseCase } from '../../application/races/get-race-results/get-race-results.use-case';
+import { CalculateAllPendingScoresUseCase } from '../../application/ranking/calculate-all-pending-scores/calculate-all-pending-scores.use-case';
+import { CalculateRaceScoresUseCase } from '../../application/ranking/calculate-race-scores/calculate-race-scores.use-case';
+import { PredictionRepository } from '../../domain/ports/prediction.repository';
+import { PredictionPrismaRepository } from '../database/repositories/prediction.prisma.repository';
+import { PredictionScoreRepository } from '../../domain/ports/prediction-score.repository';
+import { PredictionScorePrismaRepository } from '../database/repositories/prediction-score.prisma.repository';
+import { LeagueRankingRepository } from '../../domain/ports/league-ranking.repository';
+import { LeagueRankingPrismaRepository } from '../database/repositories/league-ranking.prisma.repository';
+import { LeagueRepository } from '../../domain/ports/league.repository';
+import { LeaguePrismaRepository } from '../database/repositories/league.prisma.repository';
+
+// Los endpoints /dev no tienen auth: solo se exponen con opt-in explícito.
+// main.ts carga dotenv antes de importar AppModule, así que la variable ya está disponible acá.
+const devControllers = process.env.ENABLE_DEV_TOOLS === 'true' ? [DevController] : [];
+
+@Module({
+    imports: [
+      DatabaseModule,
+      ScheduleModule.forRoot(),
+    ],
+    controllers: [RaceController, ...devControllers],
+    providers: [
+      SyncCalendarJob,
+      SyncCalendarUseCase,
+      UpdateRaceStatusJob,
+      UpdateRaceStatusUseCase,
+      SyncRaceEntriesUseCase,
+      SyncUpcomingGridUseCase,
+      SyncUpcomingGridJob,
+      SyncSeasonCalendarUseCase,
+      ColdStartSyncUseCase,
+      ColdStartSyncService,
+      ProcessFinishedRaceUseCase,
+      GetRaceEntriesUseCase,
+      GetCurrentRaceUseCase,
+      SyncRaceResultsUseCase,
+      SyncAllRaceResultsUseCase,
+      SyncRaceResultsJob,
+      GetRacesUseCase,
+      GetRaceByIdUseCase,
+      GetNextRaceUseCase,
+      GetLastResultsSyncedRaceUseCase,
+      GetRaceResultsUseCase,
+      CalculateAllPendingScoresUseCase,
+      CalculateRaceScoresUseCase,
+      { provide: OfficialResultsProvider, useClass: OpenF1Adapter },
+      { provide: RaceRepository, useClass: RacePrismaRepository },
+      { provide: TeamRepository, useClass: TeamPrismaRepository },
+      { provide: DriverRepository, useClass: DriverPrismaRepository },
+      { provide: PredictionRepository, useClass: PredictionPrismaRepository },
+      { provide: PredictionScoreRepository, useClass: PredictionScorePrismaRepository },
+      { provide: LeagueRankingRepository, useClass: LeagueRankingPrismaRepository },
+      { provide: LeagueRepository, useClass: LeaguePrismaRepository },
+      { provide: RaceResultRepository, useClass: RaceResultPrismaRepository },
+      { provide: RaceDriverResultRepository, useClass: RaceDriverResultPrismaRepository },
+      { provide: RaceEntryRepository, useClass: RaceEntryPrismaRepository },
+      { provide: SeasonRepository, useClass: SeasonPrismaRepository },
+      { provide: RaceRepository, useClass: RacePrismaRepository },
+    ],
+    exports: [RaceRepository, RaceResultRepository, RaceDriverResultRepository, RaceEntryRepository],
+  })
+export class RacesModule{}

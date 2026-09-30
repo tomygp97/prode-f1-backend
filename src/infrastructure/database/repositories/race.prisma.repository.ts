@@ -1,0 +1,170 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { Race } from '../../../domain/entities/race.entity';
+import { RaceRepository } from '../../../domain/ports/race.repository';
+import { RaceMeetingData } from '../../../domain/ports/official-results.provider';
+import { RaceStatus as DomainRaceStatus } from '../../../domain/enums/race-status.enum';
+import { RaceStatus as PrismaRaceStatus } from '@prisma/client';
+import { RaceMapper } from '../mappers/race.mapper';
+
+@Injectable()
+export class RacePrismaRepository implements RaceRepository {
+    constructor(private readonly prisma: PrismaService) {}
+
+    async upsertFromMeeting(meeting: RaceMeetingData, seasonId: string, round: number): Promise<void> {
+        await this.prisma.race.upsert({
+            where: { meetingKey: meeting.meetingKey },
+            create: {
+                seasonId: seasonId,
+                name: meeting.name,
+                circuit: meeting.circuit,
+                country: meeting.country,
+                round,
+                qualifyingStartAt: meeting.qualifyingStartAt,
+                raceStartAt: meeting.raceStartAt,
+                status: meeting.isCancelled ? PrismaRaceStatus.CANCELLED : PrismaRaceStatus.SCHEDULED,
+                meetingKey: meeting.meetingKey,
+                raceSessionKey: meeting.raceSessionKey,
+                qualifyingSessionKey: meeting.qualifyingSessionKey,
+              },
+              update: {
+                name: meeting.name,
+                circuit: meeting.circuit,
+                country: meeting.country,
+                qualifyingStartAt: meeting.qualifyingStartAt,
+                raceStartAt: meeting.raceStartAt,
+                raceSessionKey: meeting.raceSessionKey,
+                qualifyingSessionKey: meeting.qualifyingSessionKey,
+            },
+        });
+
+        // Una carrera que se cancela después de sincronizada tiene que dejar de estar abierta
+        // (si no, se bloquea en la qualy y nunca termina). Si ya tiene resultados no se toca.
+        if (meeting.isCancelled) {
+            await this.prisma.race.updateMany({
+                where: {
+                    meetingKey: meeting.meetingKey,
+                    status: { in: [PrismaRaceStatus.SCHEDULED, PrismaRaceStatus.LOCKED] },
+                },
+                data: { status: PrismaRaceStatus.CANCELLED },
+            });
+        }
+    };
+
+    async findById(id: string): Promise<Race | null> {
+        const race = await this.prisma.race.findUnique({
+            where: { id },
+        });
+
+        if (!race) {
+            return null;
+        }
+        return RaceMapper.toDomain(race);
+    }
+
+    async findAll(): Promise<Race[]> {
+        const races = await this.prisma.race.findMany({
+            orderBy: { round: 'asc' }
+        });
+    
+        return races.map(race => RaceMapper.toDomain(race));
+    };
+
+    async findRacesPendingScoreCalculation(): Promise<Race[]> {
+        const races = await this.prisma.race.findMany({
+            where: {
+            status: PrismaRaceStatus.RESULTS_SYNCED,
+            scoresCalculatedAt: null,
+            },
+        });
+        return races.map(RaceMapper.toDomain);
+    }
+
+    async markScoresCalculated(raceId: string): Promise<void> {
+        await this.prisma.race.update({
+            where: { id: raceId },
+            data: { scoresCalculatedAt: new Date() },
+        });
+    }
+
+    // Próxima carrera con predicciones abiertas: la qualy todavía no empezó (misma regla que
+    // Race.arePredictionsOpen). La que ya empezó la qualy es la "en curso" (/races/current).
+    async findNext() {
+        const now = new Date();
+        const race = await this.prisma.race.findFirst({
+            where: {
+                status: PrismaRaceStatus.SCHEDULED,
+                raceStartAt: { gte: now },
+                OR: [{ qualifyingStartAt: null }, { qualifyingStartAt: { gt: now } }],
+            },
+            orderBy: { raceStartAt: 'asc' },
+        });
+        
+        return race ? RaceMapper.toDomain(race) : null;
+    };
+
+    async findLastResultsSynced(): Promise<Race | null> {
+        const race = await this.prisma.race.findFirst({
+          where: {
+            status: PrismaRaceStatus.RESULTS_SYNCED,
+          },
+          orderBy: {
+            raceStartAt: "desc",
+          },
+        })
+      
+        return race ? RaceMapper.toDomain(race) : null
+      }
+
+    async findScheduledBeforeDate(date: Date) {
+        const races = await this.prisma.race.findMany({
+            where: {
+                qualifyingStartAt: { lte: date },
+                status: PrismaRaceStatus.SCHEDULED,
+            },
+        });
+    
+        return races.map(race => RaceMapper.toDomain(race));
+    };
+
+    async findLockedRacesWithPastStartTime(date: Date) {
+        const races = await this.prisma.race.findMany({
+            where: {
+                raceStartAt: { lte: date },
+                status: PrismaRaceStatus.LOCKED
+            }
+        });
+    
+        return races.map(race => RaceMapper.toDomain(race));
+    }
+
+    async findRacesPendingResultsSync(): Promise<Race[]> {
+        const races = await this.prisma.race.findMany({
+            where: {
+                status: PrismaRaceStatus.FINISHED,
+            }
+        });
+
+        return races.map(race => RaceMapper.toDomain(race))
+    }
+
+    async updateStatus(
+        raceId: string,
+        status: DomainRaceStatus
+    ): Promise<void> {
+        await this.prisma.race.update({
+            where: { id: raceId },
+            data: {
+                status: RaceMapper.toPrismaStatus(status),
+            },
+        });
+    }
+
+    async findByStatus(status: DomainRaceStatus): Promise<Race[]> {
+        const races = await this.prisma.race.findMany({
+            where: { status: RaceMapper.toPrismaStatus(status) },
+        });
+        return races.map(RaceMapper.toDomain);
+    }
+
+}

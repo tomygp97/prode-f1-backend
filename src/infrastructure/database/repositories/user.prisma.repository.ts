@@ -27,4 +27,10 @@ async findById(id: string): Promise<User | null> {
     return found ? UserMapper.toDomain(found) : null;
   }
 
+  async findByIds(ids: string[]): Promise<User[]> {
+    if (ids.length === 0) return [];
+    const found = await this.prisma.user.findMany({ where: { id: { in: ids } } });
+    return found.map(UserMapper.toDomain);
+  }
+
 }
