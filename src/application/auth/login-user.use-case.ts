@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { UserRepository } from "../../domain/ports/user.repository";
 import { User } from "../../domain/entities/user.entity"
 import * as bcrypt from 'bcrypt';
+import { normalizeEmail } from './normalize-email';
 import { JwtService } from '@nestjs/jwt';
 
 
@@ -27,7 +28,8 @@ export class LoginUserUseCase {
   ) {}
 
     async execute(input: LoginUserInput): Promise<LoginUserOutput> {
-        const user = await this.userRepository.findByEmail(input.email);
+        const email = normalizeEmail(input.email);
+        const user = await this.userRepository.findByEmail(email);
         if (!user) {
             throw new UnauthorizedException('Invalid email');
         }

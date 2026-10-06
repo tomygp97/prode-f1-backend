@@ -1,6 +1,12 @@
+import { Transform } from 'class-transformer';
 import { IsEmail, IsString, MinLength } from 'class-validator';
+import { normalizeEmail } from '../../../application/auth/normalize-email';
+
+const toNormalizedEmail = ({ value }: { value: unknown }) =>
+    typeof value === 'string' ? normalizeEmail(value) : value;
 
 export class RegisterUserDto {
+    @Transform(toNormalizedEmail)
     @IsEmail()
     email!: string;
 
@@ -14,6 +20,7 @@ export class RegisterUserDto {
 }
 
 export class LoginDto {
+    @Transform(toNormalizedEmail)
     @IsEmail()
     email!: string;
 
