@@ -13,15 +13,14 @@ import { RaceResult } from '../../../domain/entities/race-result.entity';
 import { RaceRepository } from '../../../domain/ports/race.repository';
 
 const POINTS = {
-  WINNER_EXACT: 25,
   POSITION_EXACT: 8,
   POSITION_OFF_BY_ONE: 3,
   SAFETY_CAR_EXACT: 5,
   DNF_EXACT: 10,
   DNF_OFF_BY_ONE: 5,
-  TRACKED_DRIVER_EXACT: 10,
-  TRACKED_DRIVER_OFF_BY_ONE: 5,
   POLE_EXACT: 20,
+  TRACKED_DRIVER_EXACT: 25,
+  TRACKED_DRIVER_OFF_BY_ONE: 10,
 };
 
 @Injectable()
@@ -107,7 +106,7 @@ export class CalculateRaceScoresUseCase {
       const diff = Math.abs(actualPosition - predictedPosition);
 
       if (diff === 0) {
-        positions += predictedPosition === 1 ? POINTS.WINNER_EXACT : POINTS.POSITION_EXACT;
+        positions += POINTS.POSITION_EXACT;   // 👈 antes tenía el if/else por P1
       } else if (diff === 1) {
         positions += POINTS.POSITION_OFF_BY_ONE;
       }
