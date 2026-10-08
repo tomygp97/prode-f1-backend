@@ -1,6 +1,7 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import * as bcrypt from 'bcrypt';
+import { normalizeEmail } from './normalize-email';
 import { UserRepository } from "../../domain/ports/user.repository";
 import { User } from "../../domain/entities/user.entity"
 
@@ -22,7 +23,8 @@ export class RegisterUserUseCase {
     constructor(private readonly userRepository: UserRepository) {}
 
     async execute(input: RegisterUserInput): Promise<RegisterUserOutput> {
-        const existing = await this.userRepository.findByEmail(input.email);
+        const email = normalizeEmail(input.email);
+        const existing = await this.userRepository.findByEmail(email);
         if (existing) {
             throw new ConflictException('Email already registered');
         }
@@ -31,7 +33,7 @@ export class RegisterUserUseCase {
 
         const user = User.create({
             id: randomUUID(),
-            email: input.email,
+            email,
             password: hashedPassword,
             name: input.name,
         })

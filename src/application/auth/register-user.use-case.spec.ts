@@ -60,5 +60,15 @@ describe('RegisterUserUseCase', () => {
         expect(mockUserRepository.save).not.toHaveBeenCalled();
     });
 
+    it('should save the email trimmed and in lowercase', async () => {
+        mockUserRepository.findByEmail.mockResolvedValue(null);
+        mockUserRepository.save.mockResolvedValue();
 
+        const result = await useCase.execute({ email: ' Tomas@Mail.COM ', password: '123456', name: 'Tomas' });
+
+        expect(mockUserRepository.findByEmail).toHaveBeenCalledWith('tomas@mail.com');
+        const savedUser: User = mockUserRepository.save.mock.calls[0][0];
+        expect(savedUser.email).toBe('tomas@mail.com');
+        expect(result.email).toBe('tomas@mail.com');
+    });
 });
