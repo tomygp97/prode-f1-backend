@@ -15,6 +15,8 @@ import { PredictionRepository } from '../../domain/ports/prediction.repository';
 import { PredictionPrismaRepository } from '../database/repositories/prediction.prisma.repository';
 import { PredictionScoreRepository } from '../../domain/ports/prediction-score.repository';
 import { PredictionScorePrismaRepository } from '../database/repositories/prediction-score.prisma.repository';
+import { UserRepository } from '../../domain/ports/user.repository';
+import { UserPrismaRepository } from '../database/repositories/user.prisma.repository';
 
 @Module({
   imports: [DatabaseModule, SharedAuthModule, LeaguesModule, RacesModule], // 👈 importa los dos módulos ajenos
@@ -25,7 +27,8 @@ import { PredictionScorePrismaRepository } from '../database/repositories/predic
     GetUserPredictionScoreUseCase,
     ListPredictionsForRaceUseCase,
     { provide: PredictionRepository, useClass: PredictionPrismaRepository },
-    { provide: PredictionScoreRepository, useClass: PredictionScorePrismaRepository },  
+    { provide: PredictionScoreRepository, useClass: PredictionScorePrismaRepository },
+    { provide: UserRepository, useClass: UserPrismaRepository },
   ],
   exports: [PredictionRepository],
 })
