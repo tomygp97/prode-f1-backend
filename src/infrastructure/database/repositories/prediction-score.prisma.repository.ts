@@ -25,6 +25,14 @@ export class PredictionScorePrismaRepository implements PredictionScoreRepositor
     return raw ? PredictionScoreMapper.toDomain(raw) : null;
   }
 
+  async findByPredictionIds(predictionIds: string[]): Promise<PredictionScore[]> {
+    if (predictionIds.length === 0) return [];
+    const rows = await this.prisma.predictionScore.findMany({
+      where: { predictionId: { in: predictionIds } },
+    });
+    return rows.map((row) => PredictionScoreMapper.toDomain(row));
+  }
+
   async findAllByLeague(leagueId: string): Promise<LeagueRaceScoreEntry[]> {
      const rows = await this.prisma.predictionScore.findMany({
       where: {

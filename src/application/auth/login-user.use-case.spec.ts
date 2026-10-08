@@ -59,4 +59,14 @@ describe('LoginUserUseCase', () => {
         ).rejects.toThrow('Invalid password')
     });
 
+    it('should look up the email trimmed and in lowercase', async () => {
+        const hashedPassword = await bcrypt.hash('123456', 10);
+        mockUserRepository.findByEmail.mockResolvedValue(
+            User.create({id: '123', email: 'test@test.com', password: hashedPassword, name: 'otro'})
+        );
+
+        await useCase.execute({ email: '  Test@TEST.com ', password: '123456' });
+
+        expect(mockUserRepository.findByEmail).toHaveBeenCalledWith('test@test.com');
+    });
 });

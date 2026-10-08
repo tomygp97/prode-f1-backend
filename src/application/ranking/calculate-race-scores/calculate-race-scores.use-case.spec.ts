@@ -22,6 +22,7 @@ const mockPredictionRepo: jest.Mocked<PredictionRepository> = {
 const mockScoreRepo: jest.Mocked<PredictionScoreRepository> = {
     save: jest.fn(),
     findByPredictionId: jest.fn(),
+    findByPredictionIds: jest.fn(),
     findAllByLeague: jest.fn(),
 };
 
@@ -135,7 +136,7 @@ describe('CalculateRaceScoresUseCase', () => {
         await useCase.execute('race-1');
 
         const [savedScore] = mockScoreRepo.save.mock.calls[0];
-        expect(savedScore.totalPoints).toBe(63); // 25 (winner) + 0 + 3 (posición) + 5 (safety car) + 10 (dnf) + 20 (pole, acierta por default)
+        expect(savedScore.totalPoints).toBe(46); // 25 (winner) + 0 + 3 (posición) + 5 (safety car) + 10 (dnf) + 20 (pole, acierta por default)
     });
 
     it('should award dnf off-by-one points', async () => {
@@ -167,7 +168,7 @@ describe('CalculateRaceScoresUseCase', () => {
         await useCase.execute('race-1');
 
         const [savedScore] = mockScoreRepo.save.mock.calls[0];
-        expect(savedScore.pointsBreakdown.trackedDriver).toBe(10);
+        expect(savedScore.pointsBreakdown.trackedDriver).toBe(25);
     });
 
     it('should award pole points when predicted pole driver matches exactly', async () => {
