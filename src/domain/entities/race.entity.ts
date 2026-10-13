@@ -15,6 +15,9 @@ export class Race {
         public readonly raceSessionKey: number | null,
         public readonly qualifyingSessionKey: number | null,
         public readonly scoresCalculatedAt: Date | null,
+        // Último recálculo de una carrera ya puntuada: cuándo y por qué (texto legible)
+        public readonly scoresRecalculatedAt: Date | null,
+        public readonly scoresRecalculationReason: string | null,
     ) {}
 
     static create(props: {
@@ -31,6 +34,8 @@ export class Race {
         raceSessionKey: number | null,
         qualifyingSessionKey: number | null,
         scoresCalculatedAt?: Date | null,
+        scoresRecalculatedAt?: Date | null,
+        scoresRecalculationReason?: string | null,
     }): Race {
         return new Race(
             props.id,
@@ -45,7 +50,9 @@ export class Race {
             props.meetingKey,
             props.raceSessionKey,
             props.qualifyingSessionKey,
-            props.scoresCalculatedAt ?? null, 
+            props.scoresCalculatedAt ?? null,
+            props.scoresRecalculatedAt ?? null,
+            props.scoresRecalculationReason ?? null,
         );
     }
 

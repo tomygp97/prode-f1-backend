@@ -18,6 +18,8 @@ export class RaceMapper {
             raceSessionKey: prismaRace.raceSessionKey,
             qualifyingSessionKey: prismaRace.qualifyingSessionKey,
             scoresCalculatedAt: prismaRace.scoresCalculatedAt,
+            scoresRecalculatedAt: prismaRace.scoresRecalculatedAt,
+            scoresRecalculationReason: prismaRace.scoresRecalculationReason,
         });
     };
 

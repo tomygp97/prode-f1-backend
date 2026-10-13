@@ -3,6 +3,7 @@ import { Driver } from "../entities/driver.entity";
 export interface DriverRepositoryResult {
     id: string;
     driverNumber: number;
+    acronym: string;
     teamId: string;
 }
 
