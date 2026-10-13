@@ -1,5 +1,4 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { LeagueRankingRepository } from '../../../domain/ports/league-ranking.repository';
 import { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
 import { PredictionScoreRepository, LeagueRaceScoreEntry } from '../../../domain/ports/prediction-score.repository';
 import { UserRepository } from '../../../domain/ports/user.repository';
@@ -14,10 +13,13 @@ export interface StandingEntry {
   trend: 'up' | 'down' | 'same';
 }
 
+/**
+ * Tabla de la liga. Todo sale de los puntajes por carrera (`prediction_scores`): el total es
+ * la suma, así que recalcular una carrera actualiza el ranking sin nada más que hacer.
+ */
 @Injectable()
 export class GetLeagueStandingsUseCase {
   constructor(
-    private readonly rankingRepo: LeagueRankingRepository,
     private readonly memberRepo: LeagueMemberRepository,
     private readonly scoreRepo: PredictionScoreRepository,
     private readonly userRepo: UserRepository,
@@ -31,24 +33,23 @@ export class GetLeagueStandingsUseCase {
       throw new ForbiddenException('You must be a member of this league to view its standings');
     }
 
-    const [rankings, raceScores, users] = await Promise.all([
-      this.rankingRepo.findAllByLeague(input.leagueId),
+    const [raceScores, users] = await Promise.all([
       this.scoreRepo.findAllByLeague(input.leagueId),
       this.userRepo.findByIds(members.map((member) => member.userId)),
     ]);
 
-    const rankingByUserId = new Map(rankings.map((r) => [r.userId, r]));
+    const totalsByUserId = this.calculateTotals(raceScores);
     const userNameById = new Map(users.map((user) => [user.id, user.name]));
     const raceWinsByUserId = this.calculateRaceWins(raceScores);
     const previousTotalByUserId = this.calculatePreviousTotals(raceScores);
 
     const rows = members.map((member) => {
-      const ranking = rankingByUserId.get(member.userId);
+      const totals = totalsByUserId.get(member.userId);
       return {
         userId: member.userId,
         userName: userNameById.get(member.userId) ?? 'Usuario',
-        totalPoints: ranking?.totalPoints ?? 0,
-        racesCounted: ranking?.racesCounted ?? 0,
+        totalPoints: totals?.totalPoints ?? 0,
+        racesCounted: totals?.racesCounted ?? 0,
         raceWins: raceWinsByUserId.get(member.userId) ?? 0,
         previousTotalPoints: previousTotalByUserId.get(member.userId) ?? 0,
       };
@@ -93,6 +94,20 @@ export class GetLeagueStandingsUseCase {
       result.set(row.userId, currentRank);
     });
     return result;
+  }
+
+  private calculateTotals(
+    raceScores: LeagueRaceScoreEntry[],
+  ): Map<string, { totalPoints: number; racesCounted: number }> {
+    const totals = new Map<string, { totalPoints: number; racesCounted: number }>();
+    for (const entry of raceScores) {
+      const current = totals.get(entry.userId) ?? { totalPoints: 0, racesCounted: 0 };
+      totals.set(entry.userId, {
+        totalPoints: current.totalPoints + entry.totalPoints,
+        racesCounted: current.racesCounted + 1,
+      });
+    }
+    return totals;
   }
 
   private calculateRaceWins(raceScores: LeagueRaceScoreEntry[]): Map<string, number> {

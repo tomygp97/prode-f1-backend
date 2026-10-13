@@ -1,18 +1,10 @@
 import { ForbiddenException } from '@nestjs/common';
-import { LeagueRankingRepository } from '../../../domain/ports/league-ranking.repository';
 import { LeagueMemberRepository } from '../../../domain/ports/league-member.repository';
 import { LeagueRaceScoreEntry, PredictionScoreRepository } from '../../../domain/ports/prediction-score.repository';
 import { UserRepository } from '../../../domain/ports/user.repository';
-import { LeagueRanking } from '../../../domain/entities/league-ranking.entity';
 import { LeagueMember } from '../../../domain/entities/league-member.entity';
 import { User } from '../../../domain/entities/user.entity';
 import { GetLeagueStandingsUseCase } from './get-league-standings.use-case';
-
-const mockRankingRepo: jest.Mocked<LeagueRankingRepository> = {
-    save: jest.fn(),
-    findByLeagueAndUser: jest.fn(),
-    findAllByLeague: jest.fn(),
-};
 
 const mockMemberRepo: jest.Mocked<LeagueMemberRepository> = {
     save: jest.fn(),
@@ -42,40 +34,39 @@ describe('GetLeagueStandingsUseCase', () => {
         id: `member-${userId}`, leagueId: 'league-1', userId, role: 'member',
     });
 
-    const ranking = (userId: string, totalPoints: number) => LeagueRanking.create({
-        id: `ranking-${userId}`, leagueId: 'league-1', userId, totalPoints, racesCounted: 3,
-    });
-
     const user = (id: string) => User.create({ id, email: `${id}@test.com`, password: 'hash', name: `Name ${id}` });
 
     const score = (userId: string, round: number, totalPoints: number): LeagueRaceScoreEntry => ({
         userId, raceId: `race-${round}`, round, totalPoints,
     });
 
+    // Un solo puntaje por usuario (fecha 1) con ese total: para los tests que solo miran el orden
+    const totals = (pointsByUser: Record<string, number>) =>
+        Object.entries(pointsByUser).map(([userId, points]) => score(userId, 1, points));
+
     // Escenario base: el requester (user-1) es miembro activo y cada miembro tiene un User
-    function givenLeague(userIds: string[], rankings: LeagueRanking[], scores: LeagueRaceScoreEntry[] = []) {
+    function givenLeague(userIds: string[], scores: LeagueRaceScoreEntry[] = []) {
         mockMemberRepo.findActiveMembersByLeague.mockResolvedValue(userIds.map(member));
-        mockRankingRepo.findAllByLeague.mockResolvedValue(rankings);
         mockScoreRepo.findAllByLeague.mockResolvedValue(scores);
         mockUserRepo.findByIds.mockResolvedValue(userIds.map(user));
     }
 
     beforeEach(() => {
-        useCase = new GetLeagueStandingsUseCase(mockRankingRepo, mockMemberRepo, mockScoreRepo, mockUserRepo);
+        useCase = new GetLeagueStandingsUseCase(mockMemberRepo, mockScoreRepo, mockUserRepo);
         jest.clearAllMocks();
     });
 
     it('should throw ForbiddenException if the requester is not an active member', async () => {
-        givenLeague(['user-2', 'user-3'], []);
+        givenLeague(['user-2', 'user-3']);
 
         await expect(
             useCase.execute({ leagueId: 'league-1', requesterId: 'user-1' }),
         ).rejects.toThrow(ForbiddenException);
-        expect(mockRankingRepo.findAllByLeague).not.toHaveBeenCalled();
+        expect(mockScoreRepo.findAllByLeague).not.toHaveBeenCalled();
     });
 
-    it('should list active members with 0 points when there are no rankings yet', async () => {
-        givenLeague(['user-1', 'user-2'], []);
+    it('should list active members with 0 points when there are no scores yet', async () => {
+        givenLeague(['user-1', 'user-2']);
 
         const result = await useCase.execute({ leagueId: 'league-1', requesterId: 'user-1' });
 
@@ -84,21 +75,17 @@ describe('GetLeagueStandingsUseCase', () => {
     });
 
     it('should return user names and exclude users that are no longer members', async () => {
-        // user-3 tiene ranking pero dejó la liga: no está entre los miembros activos
-        givenLeague(['user-1', 'user-2'], [ranking('user-1', 50), ranking('user-2', 40), ranking('user-3', 90)]);
+        // user-3 tiene puntos pero dejó la liga: no está entre los miembros activos
+        givenLeague(['user-1', 'user-2'], totals({ 'user-1': 50, 'user-2': 40, 'user-3': 90 }));
 
         const result = await useCase.execute({ leagueId: 'league-1', requesterId: 'user-1' });
 
         expect(result.map((s) => s.userId)).toEqual(['user-1', 'user-2']);
-        expect(result[0]).toMatchObject({ rank: 1, userName: 'Name user-1', totalPoints: 50, racesCounted: 3 });
+        expect(result[0]).toMatchObject({ rank: 1, userName: 'Name user-1', totalPoints: 50, racesCounted: 1 });
     });
 
     it('should assign sequential ranks when there are no ties', async () => {
-        givenLeague(['user-1', 'user-2', 'user-3'], [
-            ranking('user-1', 100),
-            ranking('user-2', 80),
-            ranking('user-3', 60),
-        ]);
+        givenLeague(['user-1', 'user-2', 'user-3'], totals({ 'user-1': 100, 'user-2': 80, 'user-3': 60 }));
 
         const result = await useCase.execute({ leagueId: 'league-1', requesterId: 'user-1' });
 
@@ -108,12 +95,8 @@ describe('GetLeagueStandingsUseCase', () => {
     });
 
     it('should apply competition ranking when there is a tie (skip the next rank)', async () => {
-        givenLeague(['user-1', 'user-2', 'user-3', 'user-4'], [
-            ranking('user-1', 100),
-            ranking('user-2', 90),
-            ranking('user-3', 90), // empatado con user-2
-            ranking('user-4', 80),
-        ]);
+        // user-3 empatado con user-2
+        givenLeague(['user-1', 'user-2', 'user-3', 'user-4'], totals({ 'user-1': 100, 'user-2': 90, 'user-3': 90, 'user-4': 80 }));
 
         const result = await useCase.execute({ leagueId: 'league-1', requesterId: 'user-1' });
 
@@ -121,7 +104,7 @@ describe('GetLeagueStandingsUseCase', () => {
     });
 
     it('should count race wins per round, giving the win to everyone tied on top', async () => {
-        givenLeague(['user-1', 'user-2'], [ranking('user-1', 70), ranking('user-2', 60)], [
+        givenLeague(['user-1', 'user-2'], [
             score('user-1', 1, 40), score('user-2', 1, 30), // gana user-1
             score('user-1', 2, 30), score('user-2', 2, 30), // empate: ganan los dos
         ]);
@@ -134,7 +117,7 @@ describe('GetLeagueStandingsUseCase', () => {
 
     it('should set the trend comparing against the standings before the last round', async () => {
         // Antes de la fecha 2: user-1 primero. Después: user-2 lo pasa.
-        givenLeague(['user-1', 'user-2'], [ranking('user-1', 45), ranking('user-2', 60)], [
+        givenLeague(['user-1', 'user-2'], [
             score('user-1', 1, 40), score('user-2', 1, 10),
             score('user-1', 2, 5), score('user-2', 2, 50),
         ]);
@@ -143,5 +126,17 @@ describe('GetLeagueStandingsUseCase', () => {
 
         expect(result.find((s) => s.userId === 'user-2')?.trend).toBe('up');
         expect(result.find((s) => s.userId === 'user-1')?.trend).toBe('down');
+    });
+
+    it('should sum every race score into the total and count the races', async () => {
+        givenLeague(['user-1', 'user-2'], [
+            score('user-1', 1, 40), score('user-1', 2, 25), score('user-1', 3, 10),
+            score('user-2', 1, 30),
+        ]);
+
+        const result = await useCase.execute({ leagueId: 'league-1', requesterId: 'user-1' });
+
+        expect(result[0]).toMatchObject({ userId: 'user-1', totalPoints: 75, racesCounted: 3 });
+        expect(result[1]).toMatchObject({ userId: 'user-2', totalPoints: 30, racesCounted: 1 });
     });
 });
