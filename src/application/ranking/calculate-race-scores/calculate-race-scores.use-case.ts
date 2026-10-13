@@ -2,15 +2,14 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { PredictionRepository } from '../../../domain/ports/prediction.repository';
 import { PredictionScoreRepository } from '../../../domain/ports/prediction-score.repository';
-import { LeagueRankingRepository } from '../../../domain/ports/league-ranking.repository';
 import { LeagueRepository } from '../../../domain/ports/league.repository';
 import { RaceResultRepository } from '../../../domain/ports/race-result.repository';
 import { RaceDriverResultRepository } from '../../../domain/ports/race-driver-result.repository';
 import { Prediction } from '../../../domain/entities/prediction.entity';
 import { PredictionScore, PredictionScoreBreakdown } from '../../../domain/entities/prediction-score.entity';
-import { LeagueRanking } from '../../../domain/entities/league-ranking.entity';
 import { RaceResult } from '../../../domain/entities/race-result.entity';
 import { RaceRepository } from '../../../domain/ports/race.repository';
+import { League } from '../../../domain/entities/league.entity';
 
 const POINTS = {
   POSITION_EXACT: 8,
@@ -23,6 +22,11 @@ const POINTS = {
   TRACKED_DRIVER_OFF_BY_ONE: 10,
 };
 
+/**
+ * Calcula (o recalcula) los puntajes de todas las predicciones de una carrera. Es idempotente:
+ * correrlo de nuevo reemplaza los puntajes con el resultado y las reglas actuales, nunca suma
+ * dos veces. El ranking de cada liga es la suma de estos puntajes (GetLeagueStandingsUseCase).
+ */
 @Injectable()
 export class CalculateRaceScoresUseCase {
   private readonly logger = new Logger(CalculateRaceScoresUseCase.name);
@@ -30,7 +34,6 @@ export class CalculateRaceScoresUseCase {
   constructor(
     private readonly predictionRepo: PredictionRepository,
     private readonly scoreRepo: PredictionScoreRepository,
-    private readonly rankingRepo: LeagueRankingRepository,
     private readonly leagueRepo: LeagueRepository,
     private readonly raceRepo: RaceRepository,
     private readonly raceResultRepo: RaceResultRepository,
@@ -49,14 +52,14 @@ export class CalculateRaceScoresUseCase {
     );
 
     const predictions = await this.predictionRepo.findAllByRaceId(raceId);
+    const leagues = new Map<string, League | null>();
+    const scores: PredictionScore[] = [];
 
     for (const prediction of predictions) {
-      const alreadyScored = await this.scoreRepo.findByPredictionId(prediction.id);
-      if (alreadyScored) {
-        continue;
+      if (!leagues.has(prediction.leagueId)) {
+        leagues.set(prediction.leagueId, await this.leagueRepo.findById(prediction.leagueId));
       }
-
-      const league = await this.leagueRepo.findById(prediction.leagueId);
+      const league = leagues.get(prediction.leagueId);
       if (!league) {
         this.logger.warn(`League ${prediction.leagueId} not found, skipping prediction ${prediction.id}`);
         continue;
@@ -68,23 +71,18 @@ export class CalculateRaceScoresUseCase {
 
       const breakdown = this.calculateBreakdown(prediction, raceResult, positionByDriverId, trackedDriverActualPosition);
 
-      const score = PredictionScore.create({
-        id: randomUUID(),
-        predictionId: prediction.id,
-        pointsBreakdown: breakdown,
-      });
-
-      await this.scoreRepo.save(score);
-
-      const currentRanking = await this.rankingRepo.findByLeagueAndUser(prediction.leagueId, prediction.userId);
-      const updatedRanking = currentRanking
-        ? currentRanking.addPoints(score.totalPoints)
-        : LeagueRanking.create({ id: randomUUID(), leagueId: prediction.leagueId, userId: prediction.userId }).addPoints(score.totalPoints);
-
-      await this.rankingRepo.save(updatedRanking);
+      scores.push(
+        PredictionScore.create({
+          id: randomUUID(), // solo se usa si la predicción no tenía puntaje
+          predictionId: prediction.id,
+          pointsBreakdown: breakdown,
+        }),
+      );
     }
 
-    this.logger.log(`Calculated scores for ${predictions.length} predictions in race ${raceId}`);
+    await this.scoreRepo.saveAll(scores);
+
+    this.logger.log(`Calculated scores for ${scores.length} predictions in race ${raceId}`);
 
     await this.raceRepo.markScoresCalculated(raceId);
   }

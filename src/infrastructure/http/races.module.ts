@@ -46,8 +46,6 @@ import { PredictionRepository } from '../../domain/ports/prediction.repository';
 import { PredictionPrismaRepository } from '../database/repositories/prediction.prisma.repository';
 import { PredictionScoreRepository } from '../../domain/ports/prediction-score.repository';
 import { PredictionScorePrismaRepository } from '../database/repositories/prediction-score.prisma.repository';
-import { LeagueRankingRepository } from '../../domain/ports/league-ranking.repository';
-import { LeagueRankingPrismaRepository } from '../database/repositories/league-ranking.prisma.repository';
 import { LeagueRepository } from '../../domain/ports/league.repository';
 import { LeaguePrismaRepository } from '../database/repositories/league.prisma.repository';
 
@@ -91,7 +89,6 @@ const devControllers = process.env.ENABLE_DEV_TOOLS === 'true' ? [DevController]
       { provide: DriverRepository, useClass: DriverPrismaRepository },
       { provide: PredictionRepository, useClass: PredictionPrismaRepository },
       { provide: PredictionScoreRepository, useClass: PredictionScorePrismaRepository },
-      { provide: LeagueRankingRepository, useClass: LeagueRankingPrismaRepository },
       { provide: LeagueRepository, useClass: LeaguePrismaRepository },
       { provide: RaceResultRepository, useClass: RaceResultPrismaRepository },
       { provide: RaceDriverResultRepository, useClass: RaceDriverResultPrismaRepository },

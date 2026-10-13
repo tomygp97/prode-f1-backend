@@ -1,6 +1,5 @@
 import { PredictionRepository } from '../../../domain/ports/prediction.repository';
 import { PredictionScoreRepository } from '../../../domain/ports/prediction-score.repository';
-import { LeagueRankingRepository } from '../../../domain/ports/league-ranking.repository';
 import { LeagueRepository } from '../../../domain/ports/league.repository';
 import { RaceRepository } from '../../../domain/ports/race.repository';
 import { RaceResultRepository } from '../../../domain/ports/race-result.repository';
@@ -9,7 +8,6 @@ import { Prediction } from '../../../domain/entities/prediction.entity';
 import { RaceResult } from '../../../domain/entities/race-result.entity';
 import { RaceDriverResult } from '../../../domain/entities/race-driver-result.entity';
 import { League } from '../../../domain/entities/league.entity';
-import { LeagueRanking } from '../../../domain/entities/league-ranking.entity';
 import { CalculateRaceScoresUseCase } from './calculate-race-scores.use-case';
 
 const mockPredictionRepo: jest.Mocked<PredictionRepository> = {
@@ -20,15 +18,9 @@ const mockPredictionRepo: jest.Mocked<PredictionRepository> = {
 };
 
 const mockScoreRepo: jest.Mocked<PredictionScoreRepository> = {
-    save: jest.fn(),
+    saveAll: jest.fn(),
     findByPredictionId: jest.fn(),
     findByPredictionIds: jest.fn(),
-    findAllByLeague: jest.fn(),
-};
-
-const mockRankingRepo: jest.Mocked<LeagueRankingRepository> = {
-    save: jest.fn(),
-    findByLeagueAndUser: jest.fn(),
     findAllByLeague: jest.fn(),
 };
 
@@ -99,7 +91,7 @@ describe('CalculateRaceScoresUseCase', () => {
 
     beforeEach(() => {
         useCase = new CalculateRaceScoresUseCase(
-            mockPredictionRepo, mockScoreRepo, mockRankingRepo, mockLeagueRepo, mockRaceRepo, mockRaceResultRepo, mockDriverResultRepo,
+            mockPredictionRepo, mockScoreRepo, mockLeagueRepo, mockRaceRepo, mockRaceResultRepo, mockDriverResultRepo,
         );
         jest.clearAllMocks();
         mockRaceRepo.markScoresCalculated.mockResolvedValue();
@@ -111,16 +103,22 @@ describe('CalculateRaceScoresUseCase', () => {
         await expect(useCase.execute('race-1')).rejects.toThrow('Race result not found for race race-1');
     });
 
-    it('should skip predictions that already have a score', async () => {
+    it('should recalculate every prediction, also the ones already scored (idempotent)', async () => {
         mockRaceResultRepo.findByRaceId.mockResolvedValue(raceResult());
         mockDriverResultRepo.findByRaceId.mockResolvedValue(driverResults());
         mockPredictionRepo.findAllByRaceId.mockResolvedValue([prediction()]);
-        mockScoreRepo.findByPredictionId.mockResolvedValue({ id: 'existing-score' } as any);
+        mockLeagueRepo.findById.mockResolvedValue(league());
 
         await useCase.execute('race-1');
+        await useCase.execute('race-1');
 
-        expect(mockScoreRepo.save).not.toHaveBeenCalled();
-        expect(mockRankingRepo.save).not.toHaveBeenCalled();
+        // Cada corrida guarda un puntaje por predicción (el repo lo reemplaza por predictionId)
+        expect(mockScoreRepo.saveAll).toHaveBeenCalledTimes(2);
+        const [first] = mockScoreRepo.saveAll.mock.calls[0][0];
+        const [second] = mockScoreRepo.saveAll.mock.calls[1][0];
+        expect(second.predictionId).toBe('prediction-1');
+        expect(second.totalPoints).toBe(first.totalPoints);
+        expect(mockScoreRepo.findByPredictionId).not.toHaveBeenCalled();
     });
 
     it('should calculate full score: winner exact, position off by one, safety car exact, dnf exact', async () => {
@@ -129,13 +127,11 @@ describe('CalculateRaceScoresUseCase', () => {
         mockPredictionRepo.findAllByRaceId.mockResolvedValue([
             prediction({ predictedOrder: ['d1', 'd3', 'd2'], safetyCar: true, dnfCount: 3 }),
         ]);
-        mockScoreRepo.findByPredictionId.mockResolvedValue(null);
         mockLeagueRepo.findById.mockResolvedValue(league());
-        mockRankingRepo.findByLeagueAndUser.mockResolvedValue(null);
 
         await useCase.execute('race-1');
 
-        const [savedScore] = mockScoreRepo.save.mock.calls[0];
+        const [savedScore] = mockScoreRepo.saveAll.mock.calls[0][0];
         expect(savedScore.totalPoints).toBe(46); // 25 (winner) + 0 + 3 (posición) + 5 (safety car) + 10 (dnf) + 20 (pole, acierta por default)
     });
 
@@ -145,13 +141,11 @@ describe('CalculateRaceScoresUseCase', () => {
         mockPredictionRepo.findAllByRaceId.mockResolvedValue([
             prediction({ predictedOrder: ['d1', 'd2', 'd3'], dnfCount: 4 }),
         ]);
-        mockScoreRepo.findByPredictionId.mockResolvedValue(null);
         mockLeagueRepo.findById.mockResolvedValue(league());
-        mockRankingRepo.findByLeagueAndUser.mockResolvedValue(null);
 
         await useCase.execute('race-1');
 
-        const [savedScore] = mockScoreRepo.save.mock.calls[0];
+        const [savedScore] = mockScoreRepo.saveAll.mock.calls[0][0];
         expect(savedScore.pointsBreakdown.dnfCount).toBe(5);
     });
 
@@ -161,13 +155,11 @@ describe('CalculateRaceScoresUseCase', () => {
         mockPredictionRepo.findAllByRaceId.mockResolvedValue([
             prediction({ trackedDriverPosition: 4 }),
         ]);
-        mockScoreRepo.findByPredictionId.mockResolvedValue(null);
         mockLeagueRepo.findById.mockResolvedValue(league('d3'));
-        mockRankingRepo.findByLeagueAndUser.mockResolvedValue(null);
 
         await useCase.execute('race-1');
 
-        const [savedScore] = mockScoreRepo.save.mock.calls[0];
+        const [savedScore] = mockScoreRepo.saveAll.mock.calls[0][0];
         expect(savedScore.pointsBreakdown.trackedDriver).toBe(25);
     });
 
@@ -177,13 +169,11 @@ describe('CalculateRaceScoresUseCase', () => {
         mockPredictionRepo.findAllByRaceId.mockResolvedValue([
             prediction({ predictedPoleDriverId: 'd2' }),
         ]);
-        mockScoreRepo.findByPredictionId.mockResolvedValue(null);
         mockLeagueRepo.findById.mockResolvedValue(league());
-        mockRankingRepo.findByLeagueAndUser.mockResolvedValue(null);
 
         await useCase.execute('race-1');
 
-        const [savedScore] = mockScoreRepo.save.mock.calls[0];
+        const [savedScore] = mockScoreRepo.saveAll.mock.calls[0][0];
         expect(savedScore.pointsBreakdown.pole).toBe(20);
     });
 
@@ -193,66 +183,49 @@ describe('CalculateRaceScoresUseCase', () => {
         mockPredictionRepo.findAllByRaceId.mockResolvedValue([
             prediction({ predictedPoleDriverId: 'd3' }),
         ]);
-        mockScoreRepo.findByPredictionId.mockResolvedValue(null);
         mockLeagueRepo.findById.mockResolvedValue(league());
-        mockRankingRepo.findByLeagueAndUser.mockResolvedValue(null);
 
         await useCase.execute('race-1');
 
-        const [savedScore] = mockScoreRepo.save.mock.calls[0];
+        const [savedScore] = mockScoreRepo.saveAll.mock.calls[0][0];
         expect(savedScore.pointsBreakdown.pole).toBe(0);
     });
 
-    it('should create a new LeagueRanking if none exists, and set racesCounted to 1', async () => {
+    it('should save the scores of all predictions of the race in a single call', async () => {
         mockRaceResultRepo.findByRaceId.mockResolvedValue(raceResult());
         mockDriverResultRepo.findByRaceId.mockResolvedValue(driverResults());
-        mockPredictionRepo.findAllByRaceId.mockResolvedValue([prediction()]);
-        mockScoreRepo.findByPredictionId.mockResolvedValue(null);
+        mockPredictionRepo.findAllByRaceId.mockResolvedValue([
+            prediction(),
+            Prediction.create({
+                id: 'prediction-2', userId: 'user-2', leagueId: 'league-1', raceId: 'race-1',
+                predictedOrder: ['d2', 'd1', 'd3'], predictedPoleDriverId: 'd2', safetyCar: false, dnfCount: 0,
+            }),
+        ]);
         mockLeagueRepo.findById.mockResolvedValue(league());
-        mockRankingRepo.findByLeagueAndUser.mockResolvedValue(null);
 
         await useCase.execute('race-1');
 
-        const [savedRanking] = mockRankingRepo.save.mock.calls[0];
-        expect(savedRanking.racesCounted).toBe(1);
-    });
-
-    it('should accumulate points on an existing LeagueRanking', async () => {
-        mockRaceResultRepo.findByRaceId.mockResolvedValue(raceResult());
-        mockDriverResultRepo.findByRaceId.mockResolvedValue(driverResults());
-        mockPredictionRepo.findAllByRaceId.mockResolvedValue([prediction()]);
-        mockScoreRepo.findByPredictionId.mockResolvedValue(null);
-        mockLeagueRepo.findById.mockResolvedValue(league());
-        mockRankingRepo.findByLeagueAndUser.mockResolvedValue(
-            LeagueRanking.create({ id: 'ranking-1', leagueId: 'league-1', userId: 'user-1', totalPoints: 20, racesCounted: 1 }),
-        );
-
-        await useCase.execute('race-1');
-
-        const [savedRanking] = mockRankingRepo.save.mock.calls[0];
-        expect(savedRanking.racesCounted).toBe(2);
-        expect(savedRanking.totalPoints).toBeGreaterThan(20);
+        expect(mockScoreRepo.saveAll).toHaveBeenCalledTimes(1);
+        expect(mockScoreRepo.saveAll.mock.calls[0][0].map((score) => score.predictionId)).toEqual(['prediction-1', 'prediction-2']);
+        expect(mockLeagueRepo.findById).toHaveBeenCalledTimes(1); // la liga se busca una vez
     });
 
     it('should skip prediction if its league no longer exists', async () => {
         mockRaceResultRepo.findByRaceId.mockResolvedValue(raceResult());
         mockDriverResultRepo.findByRaceId.mockResolvedValue(driverResults());
         mockPredictionRepo.findAllByRaceId.mockResolvedValue([prediction()]);
-        mockScoreRepo.findByPredictionId.mockResolvedValue(null);
         mockLeagueRepo.findById.mockResolvedValue(null);
 
         await useCase.execute('race-1');
 
-        expect(mockScoreRepo.save).not.toHaveBeenCalled();
+        expect(mockScoreRepo.saveAll).toHaveBeenCalledWith([]);
     });
 
     it('should mark the race as scores calculated after processing', async () => {
         mockRaceResultRepo.findByRaceId.mockResolvedValue(raceResult());
         mockDriverResultRepo.findByRaceId.mockResolvedValue(driverResults());
         mockPredictionRepo.findAllByRaceId.mockResolvedValue([prediction()]);
-        mockScoreRepo.findByPredictionId.mockResolvedValue(null);
         mockLeagueRepo.findById.mockResolvedValue(league());
-        mockRankingRepo.findByLeagueAndUser.mockResolvedValue(null);
 
         await useCase.execute('race-1');
 
