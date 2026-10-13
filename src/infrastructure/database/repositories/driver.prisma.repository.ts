@@ -47,6 +47,7 @@ export class DriverPrismaRepository implements DriverRepository {
             select: {
                 id: true,
                 driverNumber: true,
+                acronym: true,
                 teamId: true,
             },
         });

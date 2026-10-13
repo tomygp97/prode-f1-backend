@@ -7,6 +7,7 @@ import { Race } from "../../domain/entities/race.entity";
 
 
 const mockRaceRepository: jest.Mocked<RaceRepository> = {
+    findResultsSyncedSince: jest.fn(),
     upsertFromMeeting: jest.fn(),
     findAll: jest.fn(),
     findById: jest.fn(),

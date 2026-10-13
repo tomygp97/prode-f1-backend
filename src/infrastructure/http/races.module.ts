@@ -34,6 +34,8 @@ import { RaceDriverResultPrismaRepository } from '../database/repositories/race-
 import { RaceDriverResultRepository } from '../../domain/ports/race-driver-result.repository';
 import { SyncAllRaceResultsUseCase } from '../../application/sync-races/sync-all-race-results.use-case';
 import { SyncRaceResultsJob } from '../jobs/sync-race-results.job';
+import { ResyncRecentResultsUseCase } from '../../application/sync-races/resync-recent-results.use-case';
+import { ResyncRecentResultsJob } from '../jobs/resync-recent-results.job';
 import { RaceController } from './controllers/race.controller';
 import { GetRacesUseCase } from '../../application/races/get-races/get-races.use-case';
 import { GetRaceByIdUseCase } from '../../application/races/get-race/get-race-by-id.use-case';
@@ -76,6 +78,8 @@ const devControllers = process.env.ENABLE_DEV_TOOLS === 'true' ? [DevController]
       SyncRaceResultsUseCase,
       SyncAllRaceResultsUseCase,
       SyncRaceResultsJob,
+      ResyncRecentResultsUseCase,
+      ResyncRecentResultsJob,
       GetRacesUseCase,
       GetRaceByIdUseCase,
       GetNextRaceUseCase,

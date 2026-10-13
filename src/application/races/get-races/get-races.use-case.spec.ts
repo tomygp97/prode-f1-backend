@@ -5,6 +5,7 @@ import { RaceStatus } from "../../../domain/enums/race-status.enum";
 
 
 const mockRaceRepository: jest.Mocked<RaceRepository> = {
+    findResultsSyncedSince: jest.fn(),
     upsertFromMeeting: jest.fn(),
     findAll: jest.fn(),
     findById: jest.fn(),

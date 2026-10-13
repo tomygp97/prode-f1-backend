@@ -5,6 +5,7 @@ import { CalculateRaceScoresUseCase } from '../calculate-race-scores/calculate-r
 import { CalculateAllPendingScoresUseCase } from './calculate-all-pending-scores.use-case';
 
 const mockRaceRepo: jest.Mocked<RaceRepository> = {
+    findResultsSyncedSince: jest.fn(),
     upsertFromMeeting: jest.fn(),
     findAll: jest.fn(),
     findById: jest.fn(),

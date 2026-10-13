@@ -9,6 +9,7 @@ import { RaceRepository } from "../../../domain/ports/race.repository";
 import { GetRaceResultsUseCase } from "./get-race-results.use-case";
 
 const mockRaceRepository: jest.Mocked<RaceRepository> = {
+    findResultsSyncedSince: jest.fn(),
     upsertFromMeeting: jest.fn(),
     findAll: jest.fn(),
     findById: jest.fn(),

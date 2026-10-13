@@ -8,6 +8,8 @@ import { RaceEntryRepository } from "../../domain/ports/race-entry.repository";
 import { RaceEntry } from "../../domain/entities/race-entry.entity";
 import { Race } from "../../domain/entities/race.entity";
 import { RaceStatus } from "../../domain/enums/race-status.enum";
+import { RaceResult } from "../../domain/entities/race-result.entity";
+import { RaceDriverResult } from "../../domain/entities/race-driver-result.entity";
 import { SyncRaceEntriesUseCase } from "./sync-race-entries.use-case";
 
 const mockOfficialResultsProvider: jest.Mocked<OfficialResultsProvider> = {
@@ -37,6 +39,7 @@ const mockRaceDriverResultRepository: jest.Mocked<RaceDriverResultRepository> = 
 };
 
 const mockRaceRepository: jest.Mocked<RaceRepository> = {
+    findResultsSyncedSince: jest.fn(),
     upsertFromMeeting: jest.fn(),
     findAll: jest.fn(),
     findById: jest.fn(),
@@ -90,8 +93,9 @@ const fakeQualifyingResults: DriverSessionResult[] = [
 ];
 
 // teamId = equipo ACTUAL del piloto (plantel)
+const acronyms: Record<number, string> = { 1: 'VER', 16: 'LEC', 63: 'RUS' };
 const driver = (number: number, teamId: string): DriverRepositoryResult => ({
-    id: `driver-${number}`, driverNumber: number, teamId,
+    id: `driver-${number}`, driverNumber: number, acronym: acronyms[number], teamId,
 });
 const allDrivers = [driver(1, 'team-redbull'), driver(16, 'team-ferrari'), driver(63, 'team-mercedes')];
 
@@ -217,5 +221,61 @@ describe('SyncRaceResultsUseCase', () => {
 
         expect(mockSyncRaceEntries.execute).not.toHaveBeenCalled();
         expectNothingSaved();
+    });
+
+    describe('re-sync of a race that already has results', () => {
+        const syncedRace = Race.create({ id: 'race-1', seasonId: 'season-1', name: 'Australian GP',
+            circuit: 'Albert Park', country: 'Australia', round: 1, qualifyingStartAt: new Date(), raceStartAt: new Date(),
+            status: RaceStatus.RESULTS_SYNCED, meetingKey: 1, raceSessionKey: 100, qualifyingSessionKey: 101 });
+
+        // Lo que quedó guardado en el primer sync (igual a fakeRaceSessionResults)
+        function givenStoredResults(positions: [number, number | null, boolean][] = [[1, 1, false], [16, 2, false], [63, 3, true]]) {
+            mockRaceResultRepository.findByRaceId.mockResolvedValue(RaceResult.create({
+                id: 'result-1', raceId: 'race-1', poleDriverId: 'driver-16', raceWinnerDriverId: 'driver-1',
+                raceWinnerTeamId: 'team-racing-bulls', safetyCar: true, dnfCount: 1, syncedAt: new Date(),
+            }));
+            mockRaceDriverResultRepository.findByRaceId.mockResolvedValue(positions.map(([number, position, dnf]) =>
+                RaceDriverResult.create({ id: `dr-${number}`, raceId: 'race-1', driverId: `driver-${number}`, teamId: 't', position, dnf })));
+        }
+
+        it('should not write anything when OpenF1 returns the same result', async () => {
+            givenOfficialResults();
+            mockDriverRepository.findByDriverNumbers.mockResolvedValue(allDrivers);
+            givenStoredResults();
+
+            const outcome = await useCase.execute(syncedRace);
+
+            expect(outcome).toEqual({ firstSync: false, changes: [] });
+            expectNothingSaved();
+        });
+
+        it('should save the new result and describe what changed (e.g. a post-race penalty)', async () => {
+            // Penalización: LEC pasa a ganar, VER queda segundo
+            givenOfficialResults([
+                { externalDriverNumber: 16, position: 1, dnf: false },
+                { externalDriverNumber: 1, position: 2, dnf: false },
+                { externalDriverNumber: 63, position: 3, dnf: true },
+            ]);
+            mockDriverRepository.findByDriverNumbers.mockResolvedValue(allDrivers);
+            givenStoredResults();
+
+            const outcome = await useCase.execute(syncedRace);
+
+            expect(outcome).toEqual({ firstSync: false, changes: ['LEC P2→P1', 'VER P1→P2'] });
+            expect(mockRaceResultRepository.upsert).toHaveBeenCalledWith(expect.objectContaining({ raceWinnerDriverId: 'driver-16' }));
+            expect(mockRaceDriverResultRepository.replaceMany).toHaveBeenCalled();
+            // Ya estaba en RESULTS_SYNCED: el estado no se toca
+            expect(mockRaceRepository.updateStatus).not.toHaveBeenCalled();
+        });
+
+        it('should report a first sync for a FINISHED race', async () => {
+            givenOfficialResults();
+            mockDriverRepository.findByDriverNumbers.mockResolvedValue(allDrivers);
+
+            const outcome = await useCase.execute(fakeRace);
+
+            expect(outcome).toEqual({ firstSync: true, changes: [] });
+            expect(mockRaceResultRepository.findByRaceId).not.toHaveBeenCalled();
+        });
     });
 })

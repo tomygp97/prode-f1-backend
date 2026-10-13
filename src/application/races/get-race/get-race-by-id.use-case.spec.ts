@@ -4,6 +4,7 @@ import { RaceStatus } from "../../../domain/enums/race-status.enum";
 import { GetRaceByIdUseCase } from "./get-race-by-id.use-case";
 
 const mockRaceRepository: jest.Mocked<RaceRepository> = {
+    findResultsSyncedSince: jest.fn(),
     upsertFromMeeting: jest.fn(),
     findAll: jest.fn(),
     findById: jest.fn(),

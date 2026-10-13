@@ -9,6 +9,7 @@ import { SyncRaceResultsUseCase } from "../application/sync-races/sync-race-resu
 import { RaceRepository } from "../domain/ports/race.repository";
 import { RaceStatus } from "../domain/enums/race-status.enum";
 import { SyncAllRaceResultsUseCase } from "../application/sync-races/sync-all-race-results.use-case";
+import { ResyncRecentResultsUseCase } from "../application/sync-races/resync-recent-results.use-case";
 import { CalculateAllPendingScoresUseCase } from "../application/ranking/calculate-all-pending-scores/calculate-all-pending-scores.use-case";
 
 // ?year= opcional (por defecto el año actual)
@@ -32,6 +33,7 @@ export class DevController {
         private readonly officialResultsProvider: OfficialResultsProvider,
         private readonly syncRaceResultsUseCase: SyncRaceResultsUseCase,
         private readonly syncAllRaceResultsUseCase: SyncAllRaceResultsUseCase,
+        private readonly resyncRecentResultsUseCase: ResyncRecentResultsUseCase,
         private readonly calculateAllPendingScores: CalculateAllPendingScoresUseCase,
         private readonly raceRepository: RaceRepository,
     ) {}
@@ -118,6 +120,13 @@ export class DevController {
         return {
             message: 'Race results synchronization completed',
         };
+    }
+
+    // Lo mismo que ResyncRecentResultsJob: carreras con resultados de los últimos 7 días
+    @Get('resync-recent-results')
+    async resyncRecentResults() {
+        const changed = await this.resyncRecentResultsUseCase.execute();
+        return { message: `${changed.length} races changed`, changed };
     }
 
     @Get('calculate-score')
