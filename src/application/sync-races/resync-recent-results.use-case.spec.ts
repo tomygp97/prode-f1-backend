@@ -41,7 +41,10 @@ describe('ResyncRecentResultsUseCase', () => {
         const changed = await useCase.execute(NOW);
 
         expect(mockCalculateRaceScores.execute).toHaveBeenCalledTimes(1);
-        expect(mockCalculateRaceScores.execute).toHaveBeenCalledWith('b');
+        // El motivo queda registrado en la carrera
+        expect(mockCalculateRaceScores.execute).toHaveBeenCalledWith('b', {
+            reason: 'Resultado oficial actualizado: LEC P2→P1, VER P1→P2',
+        });
         expect(changed).toEqual([{ raceId: 'b', name: 'GP b', changes: ['LEC P2→P1', 'VER P1→P2'] }]);
     });
 

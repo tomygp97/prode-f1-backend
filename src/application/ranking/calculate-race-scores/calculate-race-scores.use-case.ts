@@ -40,7 +40,8 @@ export class CalculateRaceScoresUseCase {
     private readonly driverResultRepo: RaceDriverResultRepository,
   ) {}
 
-  async execute(raceId: string): Promise<void> {
+  /** `reason`: es un recálculo (ej. resultado oficial corregido) y queda registrado en la carrera. */
+  async execute(raceId: string, options: { reason?: string } = {}): Promise<void> {
     const raceResult = await this.raceResultRepo.findByRaceId(raceId);
     if (!raceResult) {
       throw new NotFoundException(`Race result not found for race ${raceId}`);
@@ -85,6 +86,9 @@ export class CalculateRaceScoresUseCase {
     this.logger.log(`Calculated scores for ${scores.length} predictions in race ${raceId}`);
 
     await this.raceRepo.markScoresCalculated(raceId);
+    if (options.reason) {
+      await this.raceRepo.markScoresRecalculated(raceId, options.reason);
+    }
   }
 
   private calculateBreakdown(

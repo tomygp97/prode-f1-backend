@@ -87,6 +87,13 @@ export class RacePrismaRepository implements RaceRepository {
         });
     }
 
+    async markScoresRecalculated(raceId: string, reason: string): Promise<void> {
+        await this.prisma.race.update({
+            where: { id: raceId },
+            data: { scoresRecalculatedAt: new Date(), scoresRecalculationReason: reason.slice(0, 500) },
+        });
+    }
+
     // Próxima carrera con predicciones abiertas: la qualy todavía no empezó (misma regla que
     // Race.arePredictionsOpen). La que ya empezó la qualy es la "en curso" (/races/current).
     async findNext() {

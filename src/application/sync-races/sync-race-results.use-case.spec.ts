@@ -39,6 +39,7 @@ const mockRaceDriverResultRepository: jest.Mocked<RaceDriverResultRepository> = 
 };
 
 const mockRaceRepository: jest.Mocked<RaceRepository> = {
+    markScoresRecalculated: jest.fn(),
     findResultsSyncedSince: jest.fn(),
     upsertFromMeeting: jest.fn(),
     findAll: jest.fn(),

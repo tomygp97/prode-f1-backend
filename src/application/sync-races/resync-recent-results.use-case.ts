@@ -37,7 +37,9 @@ export class ResyncRecentResultsUseCase {
                 const { changes } = await this.syncRaceResultsUseCase.execute(race);
                 if (changes.length === 0) continue;
 
-                await this.calculateRaceScoresUseCase.execute(race.id);
+                await this.calculateRaceScoresUseCase.execute(race.id, {
+                    reason: `Resultado oficial actualizado: ${changes.join(', ')}`,
+                });
                 changed.push({ raceId: race.id, name: race.name, changes });
             } catch (error) {
                 this.logger.error(`Failed re-syncing results for ${race.name}`, error instanceof Error ? error.stack : error);

@@ -9,6 +9,8 @@ export abstract class RaceRepository {
   abstract findAll(): Promise<Race[]>;
   abstract findRacesPendingScoreCalculation(): Promise<Race[]>;
   abstract markScoresCalculated(raceId: string): Promise<void>;
+  /** Deja registro de un recálculo: cuándo y por qué (texto legible, hasta 500 caracteres). */
+  abstract markScoresRecalculated(raceId: string, reason: string): Promise<void>;
   abstract findNext(): Promise<Race | null>;
   abstract findLastResultsSynced(): Promise<Race | null>
   abstract findScheduledBeforeDate(date: Date): Promise<Race[]>;

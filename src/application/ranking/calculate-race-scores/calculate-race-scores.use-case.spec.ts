@@ -35,6 +35,7 @@ const mockLeagueRepo: jest.Mocked<LeagueRepository> = {
 };
 
 const mockRaceRepo: jest.Mocked<RaceRepository> = {
+    markScoresRecalculated: jest.fn(),
     findResultsSyncedSince: jest.fn(),
     upsertFromMeeting: jest.fn(),
     findAll: jest.fn(),
@@ -231,5 +232,18 @@ describe('CalculateRaceScoresUseCase', () => {
         await useCase.execute('race-1');
 
         expect(mockRaceRepo.markScoresCalculated).toHaveBeenCalledWith('race-1');
+    });
+
+    it('should record the recalculation reason only when one is given', async () => {
+        mockRaceResultRepo.findByRaceId.mockResolvedValue(raceResult());
+        mockDriverResultRepo.findByRaceId.mockResolvedValue(driverResults());
+        mockPredictionRepo.findAllByRaceId.mockResolvedValue([prediction()]);
+        mockLeagueRepo.findById.mockResolvedValue(league());
+
+        await useCase.execute('race-1');
+        expect(mockRaceRepo.markScoresRecalculated).not.toHaveBeenCalled();
+
+        await useCase.execute('race-1', { reason: 'Resultado oficial actualizado: VER P1→P2' });
+        expect(mockRaceRepo.markScoresRecalculated).toHaveBeenCalledWith('race-1', 'Resultado oficial actualizado: VER P1→P2');
     });
 });

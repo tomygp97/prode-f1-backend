@@ -33,6 +33,7 @@ const mockMemberRepo: jest.Mocked<LeagueMemberRepository> = {
 };
 
 const mockRaceRepo: jest.Mocked<RaceRepository> = {
+    markScoresRecalculated: jest.fn(),
     findResultsSyncedSince: jest.fn(),
     upsertFromMeeting: jest.fn(),
     findAll: jest.fn(),
