@@ -140,6 +140,9 @@ model Race {
   raceStartAt           DateTime?   @map("race_start_at")
   status                RaceStatus  @default(SCHEDULED)
   scoresCalculatedAt    DateTime?   @map("scores_calculated_at")
+  // Último recálculo de una carrera ya puntuada (cambio de reglas o resultado oficial corregido)
+  scoresRecalculatedAt      DateTime? @map("scores_recalculated_at")
+  scoresRecalculationReason String?   @map("scores_recalculation_reason") @db.VarChar(500)
 
   // OpenF1 identifiers
   meetingKey            Int         @unique @map("meeting_key")

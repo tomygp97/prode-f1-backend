@@ -8,7 +8,8 @@ export interface LeagueRaceScoreEntry {
 }
 
 export abstract class PredictionScoreRepository {
-  abstract save(score: PredictionScore): Promise<void>;
+  /** Guarda los puntajes de una carrera en una sola transacción; reemplaza el de una predicción si ya existía. */
+  abstract saveAll(scores: PredictionScore[]): Promise<void>;
   abstract findByPredictionId(predictionId: string): Promise<PredictionScore | null>;
   abstract findByPredictionIds(predictionIds: string[]): Promise<PredictionScore[]>;
   abstract findAllByLeague(leagueId: string): Promise<LeagueRaceScoreEntry[]>;

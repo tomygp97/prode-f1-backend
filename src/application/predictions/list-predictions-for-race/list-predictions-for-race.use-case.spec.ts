@@ -19,7 +19,7 @@ const mockPredictionRepo: jest.Mocked<PredictionRepository> = {
 };
 
 const mockScoreRepo: jest.Mocked<PredictionScoreRepository> = {
-    save: jest.fn(),
+    saveAll: jest.fn(),
     findByPredictionId: jest.fn(),
     findByPredictionIds: jest.fn(),
     findAllByLeague: jest.fn(),
@@ -33,6 +33,8 @@ const mockMemberRepo: jest.Mocked<LeagueMemberRepository> = {
 };
 
 const mockRaceRepo: jest.Mocked<RaceRepository> = {
+    markScoresRecalculated: jest.fn(),
+    findResultsSyncedSince: jest.fn(),
     upsertFromMeeting: jest.fn(),
     findAll: jest.fn(),
     findById: jest.fn(),

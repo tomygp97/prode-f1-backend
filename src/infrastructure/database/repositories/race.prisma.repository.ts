@@ -87,6 +87,13 @@ export class RacePrismaRepository implements RaceRepository {
         });
     }
 
+    async markScoresRecalculated(raceId: string, reason: string): Promise<void> {
+        await this.prisma.race.update({
+            where: { id: raceId },
+            data: { scoresRecalculatedAt: new Date(), scoresRecalculationReason: reason.slice(0, 500) },
+        });
+    }
+
     // Próxima carrera con predicciones abiertas: la qualy todavía no empezó (misma regla que
     // Race.arePredictionsOpen). La que ya empezó la qualy es la "en curso" (/races/current).
     async findNext() {
@@ -146,6 +153,16 @@ export class RacePrismaRepository implements RaceRepository {
         });
 
         return races.map(race => RaceMapper.toDomain(race))
+    }
+
+    async findResultsSyncedSince(date: Date): Promise<Race[]> {
+        const races = await this.prisma.race.findMany({
+            where: {
+                status: PrismaRaceStatus.RESULTS_SYNCED,
+                raceStartAt: { gte: date },
+            },
+        });
+        return races.map(race => RaceMapper.toDomain(race));
     }
 
     async updateStatus(

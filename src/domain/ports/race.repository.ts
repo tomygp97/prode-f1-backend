@@ -9,10 +9,14 @@ export abstract class RaceRepository {
   abstract findAll(): Promise<Race[]>;
   abstract findRacesPendingScoreCalculation(): Promise<Race[]>;
   abstract markScoresCalculated(raceId: string): Promise<void>;
+  /** Deja registro de un recálculo: cuándo y por qué (texto legible, hasta 500 caracteres). */
+  abstract markScoresRecalculated(raceId: string, reason: string): Promise<void>;
   abstract findNext(): Promise<Race | null>;
   abstract findLastResultsSynced(): Promise<Race | null>
   abstract findScheduledBeforeDate(date: Date): Promise<Race[]>;
   abstract findLockedRacesWithPastStartTime(date: Date): Promise<Race[]>;
   abstract findRacesPendingResultsSync(): Promise<Race[]>;
+  /** RESULTS_SYNCED con largada desde `date`: candidatas a re-sync por penalizaciones. */
+  abstract findResultsSyncedSince(date: Date): Promise<Race[]>;
   abstract updateStatus(raceId: string, status: RaceStatus): Promise<void>;
 }

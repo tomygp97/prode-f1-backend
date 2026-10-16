@@ -11,8 +11,6 @@ import { CalculateRaceScoresUseCase } from '../../application/ranking/calculate-
 import { CalculateAllPendingScoresUseCase } from '../../application/ranking/calculate-all-pending-scores/calculate-all-pending-scores.use-case';
 import { GetLeagueStandingsUseCase } from '../../application/ranking/get-league-standings/get-league-standings.use-case';
 
-import { LeagueRankingRepository } from '../../domain/ports/league-ranking.repository';
-import { LeagueRankingPrismaRepository } from '../database/repositories/league-ranking.prisma.repository';
 import { PredictionScoreRepository } from '../../domain/ports/prediction-score.repository';
 import { PredictionScorePrismaRepository } from '../database/repositories/prediction-score.prisma.repository';
 import { UserRepository } from '../../domain/ports/user.repository';
@@ -28,7 +26,6 @@ import { CalculateScoresJob } from '../jobs/calculate-scores.job';
     CalculateAllPendingScoresUseCase,
     GetLeagueStandingsUseCase,
     CalculateScoresJob,
-    { provide: LeagueRankingRepository, useClass: LeagueRankingPrismaRepository },
     { provide: PredictionScoreRepository, useClass: PredictionScorePrismaRepository },
     { provide: UserRepository, useClass: UserPrismaRepository },
   ],

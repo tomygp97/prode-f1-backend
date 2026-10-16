@@ -9,13 +9,22 @@ import { LeagueRaceScoreEntry } from '../../../domain/ports/prediction-score.rep
 export class PredictionScorePrismaRepository implements PredictionScoreRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async save(score: PredictionScore): Promise<void> {
-    const data = PredictionScoreMapper.toPersistence(score);
-    await this.prisma.predictionScore.upsert({
-      where: { id: score.id },
-      create: data,
-      update: data,
-    });
+  async saveAll(scores: PredictionScore[]): Promise<void> {
+    if (scores.length === 0) return;
+    await this.prisma.$transaction(
+      scores.map((score) => {
+        const data = PredictionScoreMapper.toPersistence(score);
+        return this.prisma.predictionScore.upsert({
+          where: { predictionId: score.predictionId },
+          create: data,
+          update: {
+            pointsBreakdown: data.pointsBreakdown,
+            totalPoints: data.totalPoints,
+            calculatedAt: data.calculatedAt,
+          },
+        });
+      }),
+    );
   }
 
   async findByPredictionId(predictionId: string): Promise<PredictionScore | null> {

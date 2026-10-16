@@ -8,6 +8,14 @@ import { RaceDriverResultRepository, ReplaceRaceDriverResultData } from "../../d
 import { RaceRepository } from "../../domain/ports/race.repository";
 import { Race } from "../../domain/entities/race.entity";
 import { RaceStatus } from "../../domain/enums/race-status.enum";
+import { describeResultChanges, ResultSnapshot, snapshotOf } from "./describe-result-changes";
+
+export interface SyncRaceResultsOutcome {
+    /** Primera vez que se guardan los resultados de esta carrera. */
+    firstSync: boolean;
+    /** En un re-sync: qué cambió respecto de lo guardado (vacío = nada, no se escribió). */
+    changes: string[];
+}
 
 
 @Injectable()
@@ -24,10 +32,16 @@ export class SyncRaceResultsUseCase{
         private readonly syncRaceEntriesUseCase: SyncRaceEntriesUseCase,
     ) {}
 
-    async execute(race: Race): Promise<void> {
+    /**
+     * FINISHED: guarda los resultados por primera vez y pasa la carrera a RESULTS_SYNCED.
+     * RESULTS_SYNCED: re-sync; vuelve a consultar OpenF1 y solo escribe si algo cambió
+     * (penalizaciones, descalificaciones, resultado provisorio corregido).
+     */
+    async execute(race: Race): Promise<SyncRaceResultsOutcome> {
         this.logger.log(`Syncing results for ${race.name}`);
 
-        if (race.status !== RaceStatus.FINISHED) {
+        const firstSync = race.status === RaceStatus.FINISHED;
+        if (!firstSync && race.status !== RaceStatus.RESULTS_SYNCED) {
             throw new Error(
                 `Race ${race.name} is not ready for results synchronization`,
             );
@@ -116,6 +130,60 @@ export class SyncRaceResultsUseCase{
             };
         });
 
+        if (!firstSync) {
+            const acronymById = new Map([...driversByNumber.values()].map(driver => [driver.id, driver.acronym]));
+            const changes = await this.changesSinceStored(race.id, {
+                poleDriverId: poleDriver.id,
+                safetyCar,
+                dnfCount,
+                drivers: raceDriversResults,
+            }, (driverId) => acronymById.get(driverId) ?? 'piloto');
+
+            if (changes.length === 0) {
+                this.logger.log(`Results unchanged for ${race.name}`);
+                return { firstSync, changes };
+            }
+            this.logger.log(`Results changed for ${race.name}: ${changes.join(', ')}`);
+            await this.saveResults(race, poleDriver, winnerDriver, teamOf, safetyCar, dnfCount, raceDriversResults);
+            return { firstSync, changes };
+        }
+
+        await this.saveResults(race, poleDriver, winnerDriver, teamOf, safetyCar, dnfCount, raceDriversResults);
+
+        await this.raceRepository.updateStatus(
+            race.id,
+            RaceStatus.RESULTS_SYNCED
+        )
+
+        this.logger.log(
+            `Results synced successfully for ${race.name}`
+        );
+        return { firstSync, changes: [] };
+    }
+
+    private async changesSinceStored(
+        raceId: string,
+        next: ResultSnapshot,
+        acronymOf: (driverId: string) => string,
+    ): Promise<string[]> {
+        const [storedResult, storedDrivers] = await Promise.all([
+            this.raceResultRepository.findByRaceId(raceId),
+            this.raceDriverResultRepository.findByRaceId(raceId),
+        ]);
+        // Sin resultado guardado (no debería pasar en RESULTS_SYNCED): se trata como cambio
+        if (!storedResult) return ['Resultado oficial guardado de nuevo'];
+        return describeResultChanges(snapshotOf(storedResult, storedDrivers), next, acronymOf);
+    }
+
+    private async saveResults(
+        race: Race,
+        poleDriver: DriverRepositoryResult,
+        winnerDriver: DriverRepositoryResult,
+        teamOf: (driver: DriverRepositoryResult) => string,
+        safetyCar: boolean,
+        dnfCount: number,
+        raceDriversResults: ReplaceRaceDriverResultData[],
+    ): Promise<void> {
         await this.raceResultRepository.upsert({
             raceId: race.id,
             poleDriverId: poleDriver.id,
@@ -127,15 +195,6 @@ export class SyncRaceResultsUseCase{
 
         await this.raceDriverResultRepository.replaceMany(
             raceDriversResults
-        );
-
-        await this.raceRepository.updateStatus(
-            race.id,
-            RaceStatus.RESULTS_SYNCED
-        )
-
-        this.logger.log(
-            `Results synced successfully for ${race.name}`
         );
     }
 
