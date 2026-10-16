@@ -26,6 +26,8 @@ model User {
   leagueMembers  LeagueMember[]
   predictions    Prediction[]
   leagueRankings LeagueRanking[]
+  passwordResetTokens        PasswordResetToken[] @relation("PasswordResetTokenUser")
+  createdPasswordResetTokens PasswordResetToken[] @relation("PasswordResetTokenCreator")
 
   @@map("users")
 }
@@ -273,4 +275,22 @@ model LeagueRanking {
 
   @@unique([leagueId, userId])
   @@map("league_rankings")
+}
+
+// Links de un solo uso para restablecer la contraseña (los genera un admin de la app).
+// Solo se guarda el SHA-256 del token: con la base no se pueden usar los links.
+model PasswordResetToken {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  tokenHash   String    @unique @map("token_hash") @db.Char(64)
+  expiresAt   DateTime  @map("expires_at")
+  usedAt      DateTime? @map("used_at")
+  createdById String    @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  user      User @relation("PasswordResetTokenUser", fields: [userId], references: [id])
+  createdBy User @relation("PasswordResetTokenCreator", fields: [createdById], references: [id])
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
