@@ -12,6 +12,7 @@ import { LoginUserUseCase } from '../../application/auth/login-user.use-case';
 import { GetMeUseCase } from '../../application/auth/get-me.use-case';
 import { CreatePasswordResetLinkUseCase } from '../../application/auth/create-password-reset-link.use-case';
 import { ResetPasswordUseCase } from '../../application/auth/reset-password.use-case';
+import { ChangePasswordUseCase } from '../../application/auth/change-password.use-case';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AppAdminGuard } from './guards/app-admin.guard';
 
@@ -30,6 +31,7 @@ import { AppAdminGuard } from './guards/app-admin.guard';
     GetMeUseCase,
     CreatePasswordResetLinkUseCase,
     ResetPasswordUseCase,
+    ChangePasswordUseCase,
     JwtAuthGuard,
     AppAdminGuard,
     {

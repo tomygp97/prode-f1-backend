@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { UserRepository } from "../../domain/ports/user.repository";
 import { User } from "../../domain/entities/user.entity"
-import * as bcrypt from 'bcrypt';
+import { verifyPassword } from './password-hasher';
 import { normalizeEmail } from './normalize-email';
 import { JwtService } from '@nestjs/jwt';
 
@@ -34,7 +34,7 @@ export class LoginUserUseCase {
             throw new UnauthorizedException('Invalid email');
         }
 
-        const isPasswordValid = await bcrypt.compare(input.password, user.password);
+        const isPasswordValid = await verifyPassword(input.password, user.password);
         if (!isPasswordValid) {
             throw new UnauthorizedException('Invalid password');
         }

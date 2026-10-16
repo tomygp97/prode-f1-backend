@@ -28,6 +28,16 @@ export class LoginDto {
     password!: string;
 }
 
+export class ChangePasswordDto {
+    @IsString()
+    @IsNotEmpty()
+    currentPassword!: string;
+
+    @IsString()
+    @MinLength(6)
+    newPassword!: string;
+}
+
 export class ResetPasswordDto {
     @IsString()
     @IsNotEmpty()
