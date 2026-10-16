@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Post, UseGuards } from "@nestjs/common";
-import { RegisterUserDto, LoginDto } from "../dtos/user.dto";
+import { Body, Controller, Get, HttpCode, Post, UseGuards } from "@nestjs/common";
+import { RegisterUserDto, LoginDto, ResetPasswordDto } from "../dtos/user.dto";
 import { RegisterUserUseCase } from "src/application/auth/register-user.use-case";
 import { LoginUserUseCase } from "src/application/auth/login-user.use-case";
 import { GetMeUseCase } from "src/application/auth/get-me.use-case";
+import { ResetPasswordUseCase } from "src/application/auth/reset-password.use-case";
 import { JwtAuthGuard } from "../guards/jwt-auth.guard";
 import { CurrentUser } from "../decorators/current-user.decorator";
 
@@ -13,6 +14,7 @@ export class AuthController {
         private readonly registerUserUseCase: RegisterUserUseCase,
         private readonly loginUserUseCase: LoginUserUseCase,
         private readonly getMeUseCase: GetMeUseCase,
+        private readonly resetPasswordUseCase: ResetPasswordUseCase,
     ) {}
 
     @Post('register')
@@ -30,5 +32,12 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     async me(@CurrentUser() user: { userId: string }) {
         return this.getMeUseCase.execute(user.userId)
+    }
+
+    // Pública: con el link de un solo uso que generó un admin (POST /admin/password-reset-links)
+    @Post('reset-password')
+    @HttpCode(204)
+    async resetPassword(@Body() dto: ResetPasswordDto) {
+        await this.resetPasswordUseCase.execute(dto)
     }
 }

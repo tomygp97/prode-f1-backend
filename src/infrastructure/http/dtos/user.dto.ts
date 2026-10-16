@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 import { normalizeEmail } from '../../../application/auth/normalize-email';
 
 const toNormalizedEmail = ({ value }: { value: unknown }) =>
@@ -26,5 +26,21 @@ export class LoginDto {
 
     @IsString()
     password!: string;
+}
+
+export class ResetPasswordDto {
+    @IsString()
+    @IsNotEmpty()
+    token!: string;
+
+    @IsString()
+    @MinLength(6)
+    newPassword!: string;
+}
+
+export class CreatePasswordResetLinkDto {
+    @Transform(toNormalizedEmail)
+    @IsEmail()
+    email!: string;
 }
 
