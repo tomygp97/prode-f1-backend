@@ -6,6 +6,9 @@ import { DatabaseModule } from '../database/database.module';
 import { UserRepository } from '../../domain/ports/user.repository';
 import { RegisterUserUseCase } from '../../application/auth/register-user.use-case';
 import { LoginUserUseCase } from '../../application/auth/login-user.use-case';
+import { GetMeUseCase } from '../../application/auth/get-me.use-case';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { AppAdminGuard } from './guards/app-admin.guard';
 
 @Module({
   imports: [
@@ -19,6 +22,9 @@ import { LoginUserUseCase } from '../../application/auth/login-user.use-case';
   providers: [
     RegisterUserUseCase,
     LoginUserUseCase,
+    GetMeUseCase,
+    JwtAuthGuard,
+    AppAdminGuard,
     {
       provide: UserRepository,
       useClass: UserPrismaRepository,
