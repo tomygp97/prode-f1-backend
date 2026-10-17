@@ -1,6 +1,6 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import * as bcrypt from 'bcrypt';
+import { hashPassword } from './password-hasher';
 import { normalizeEmail } from './normalize-email';
 import { UserRepository } from "../../domain/ports/user.repository";
 import { User } from "../../domain/entities/user.entity"
@@ -29,7 +29,7 @@ export class RegisterUserUseCase {
             throw new ConflictException('Email already registered');
         }
 
-        const hashedPassword = await bcrypt.hash(input.password, 10);
+        const hashedPassword = await hashPassword(input.password);
 
         const user = User.create({
             id: randomUUID(),
