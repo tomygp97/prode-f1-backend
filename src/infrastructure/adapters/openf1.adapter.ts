@@ -131,14 +131,31 @@ export class OpenF1Adapter implements OfficialResultsProvider {
         return results.length > 0;
     }
 
+    
     async hasSafetyCar(sessionKey: number): Promise<boolean> {
         return this.executeWithRetry(async () => {
-            const res = await axios.get(`${OPENF1_BASE_URL}/race_control?session_key=${sessionKey}&category=SafetyCar`);
-                        return res.data.some(
-                (entry: { message: string }) => entry.message === 'SAFETY CAR DEPLOYED'
-            );
-        })
+            try {
+                const res = await axios.get(
+                    `${OPENF1_BASE_URL}/race_control?session_key=${sessionKey}&category=SafetyCar`
+                );
+
+                return res.data.some(
+                    (entry: { message: string }) =>
+                        entry.message === 'SAFETY CAR DEPLOYED'
+                );
+            } catch (error) {
+                if (axios.isAxiosError(error) && error.response?.status === 404) {
+                    this.logger.debug(
+                        `No Safety Car events found for session ${sessionKey}`
+                    );
+                    return false;
+                }
+
+                throw error;
+            }
+        });
     }
+
 
     async getDrivers(sessionKey: number): Promise<DriverData[]> {
         const drivers = await this.getList<any>(
